@@ -7,7 +7,7 @@ const twitterId = ref('');
 // 現在表示・編集中のメモの内容
 const currentMemo = ref('');
 // useMemoStore から必要な関数を取得
-const { saveMemo, getMemo, getAllMemos, importMemos } = useMemoStore();
+const { saveMemo, getMemo, getAllMemos, importMemos, memos } = useMemoStore(); // memos ref も取得
 
 /**
  * 現在の Twitter ID に対応するメモを localStorage からロードし、currentMemo に設定する
@@ -161,6 +161,19 @@ onMounted(async () => {
       <input type="file" @change="importData" accept=".json" style="display: none;">
     </label>
   </div>
+
+  <hr> <!-- 区切り線を追加 -->
+
+  <h2>保存済みメモ一覧</h2>
+  <div class="memo-list-container">
+    <p v-if="memos.length === 0">まだメモは保存されていません。</p>
+    <ul v-else class="memo-list">
+      <li v-for="memoItem in memos" :key="memoItem.id" class="memo-item">
+        <strong>ID: {{ memoItem.id }}</strong>
+        <p>{{ memoItem.text }}</p>
+      </li>
+    </ul>
+  </div>
 </template>
 
 <style scoped>
@@ -228,5 +241,44 @@ hr {
 
 .import-button:hover {
   background-color: #218838; /* ホバー時の色 */
+}
+
+/* メモ一覧のスタイル */
+.memo-list-container {
+  margin-top: 1em;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 15px;
+  background-color: #f9f9f9;
+}
+
+.memo-list {
+  list-style: none; /* リストの点を削除 */
+  padding: 0;
+  margin: 0;
+}
+
+.memo-item {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 10px 15px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.memo-item:last-child {
+  margin-bottom: 0; /* 最後の子要素の下マージンを削除 */
+}
+
+.memo-item strong {
+  color: #007bff;
+  display: block; /* IDとメモ内容を分けて表示 */
+  margin-bottom: 5px;
+}
+
+.memo-item p {
+  margin: 0; /* 段落のデフォルトマージンを削除 */
+  color: #333;
 }
 </style>
