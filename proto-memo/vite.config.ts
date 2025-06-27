@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [
     vue(),
     VitePWA({
-      registerType: 'auto',
+      registerType: 'autoUpdate',
       manifest: {
         name: 'Twitter Profile Memo',
         short_name: 'Twitter Memo',
