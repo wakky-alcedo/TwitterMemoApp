@@ -1,9 +1,10 @@
 <template>
-  <div class="container">
+  <div>
     <h1>Twitterプロフィールメモ</h1>
-    <input v-model="profileUrl" placeholder="TwitterプロフィールURLを入力" />
+
+    <input v-model="profileUrl" placeholder="TwitterのプロフィールURLを入力" />
     <textarea v-model="memo" placeholder="メモを入力"></textarea>
-    <button @click="saveMemo">保存</button>
+    <button @click="handleSaveMemo">保存</button>
 
     <div v-if="savedMemo">
       <h2>保存したメモ</h2>
@@ -12,51 +13,29 @@
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue';
-import { useMemoStore } from '../composables/useMemoStore';
+<script setup lang="ts">
+import { ref } from 'vue'
+import { saveMemo as storeMemo } from '../composables/useMemoStore'
 
-const profileUrl = ref('');
-const memo = ref('');
-const { saveMemo, getMemo } = useMemoStore();
-const savedMemo = ref('');
+const profileUrl = ref('')
+const memo = ref('')
+const savedMemo = ref('')
 
-// 保存ボタンがクリックされたとき
-const saveMemo = () => {
+const handleSaveMemo = () => {
   if (profileUrl.value) {
-    saveMemo(profileUrl.value, memo.value);  // メモを保存
-    savedMemo.value = getMemo(profileUrl.value); // 保存したメモを表示
+    storeMemo(profileUrl.value, memo.value)  // メモを保存
+    savedMemo.value = memo.value            // 表示用にも保存
+    memo.value = ''
   }
-};
-
-// プロフィールURLが入力されている場合に保存済みメモを表示
-if (profileUrl.value) {
-  savedMemo.value = getMemo(profileUrl.value);
 }
 </script>
 
-<style>
-.container {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
+<style scoped>
 input, textarea {
+  display: block;
   width: 100%;
-  padding: 10px;
-  margin: 10px 0;
-}
-
-button {
-  padding: 10px 20px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-
-button:hover {
-  background-color: #45a049;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  font-size: 1rem;
 }
 </style>
