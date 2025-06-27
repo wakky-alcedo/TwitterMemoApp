@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'; // computed を再度インポート
+import { ref, onMounted, computed } from 'vue';
 import useMemoStore from '../composables/useMemoStore';
+// 新しいコンポーネントをインポート
+import DataManagement from '../components/DataManagement.vue';
+import MemoList from '../components/MemoList.vue';
 
 // Twitter ID を保持するリアクティブ変数
 const twitterId = ref('');
@@ -8,7 +11,7 @@ const twitterId = ref('');
 const currentMemo = ref('');
 // useMemoStore から必要な関数を取得
 // memos ref も取得することで、useMemoStore 内部の状態を直接リアクティブに利用できる
-const { saveMemo, getMemo, getAllMemos, importMemos, memos } = useMemoStore();
+const { saveMemo, getMemo, memos } = useMemoStore(); // getAllMemos, importMemos は DataManagement に移動
 
 /**
  * 現在の Twitter ID に対応するメモを localStorage からロードし、currentMemo に設定する
@@ -29,84 +32,23 @@ const saveCurrentMemo = () => {
 };
 
 /**
- * 全てのメモデータを JSON 形式でエクスポートし、ファイルとしてダウンロードさせる
- * メモがない場合はアラートを表示し、処理を中断する
+ * DataManagement コンポーネントからの import-success イベントハンドラ
+ * メモデータが変更された可能性があるため、現在の ID のメモを再ロードする
  */
-const exportData = () => {
-  const allMemos = getAllMemos(); // useMemoStore から全てのメモデータを取得
-  if (allMemos.length === 0) {
-    alert('保存されているメモがありません。');
-    return;
-  }
-  // JSON データを見やすいように整形（インデント2）して文字列化
-  const dataStr = JSON.stringify(allMemos, null, 2);
-  // JSON 文字列を 'application/json' タイプの Blob オブジェクトとして作成
-  const blob = new Blob([dataStr], { type: 'application/json' });
-  // Blob から一時的な URL を生成
-  const url = URL.createObjectURL(blob);
-  // ダウンロード用の <a> 要素を作成
-  const a = document.createElement('a');
-  a.href = url; // 生成したURLを設定
-  a.download = 'twitter_memos_backup.json'; // ダウンロード時のファイル名を指定
-  // リンクを DOM の body に一時的に追加
-  document.body.appendChild(a);
-  a.click(); // プログラム的にクリックイベントを発火させ、ダウンロードを開始
-  // 使用済みの一時 URL を解放し、DOM からリンク要素を削除
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  alert('メモをエクスポートしました！');
+const handleImportSuccess = () => {
+  alert('メモがインポートされました！UIを更新します。');
+  loadMemo(); // 現在のIDのメモを再ロードしてUIを更新
 };
 
 /**
- * ファイルからメモデータを読み込み、localStorage にインポートする
- * 選択されたファイルがなければアラートを表示
- * ファイル内容を JSON としてパースし、useMemoStore の importMemos 関数を呼び出す
- * インポート成功後、ユーザーに通知し、現在の ID のメモを再ロードして UI を更新する
- * エラーが発生した場合は、その旨をユーザーに通知する
- * @param event ファイル選択イベント
+ * MemoList コンポーネントからの edit-memo イベントハンドラ
+ * 選択されたメモの ID と内容を現在の入力フィールドに反映させる
+ * @param id 編集対象のTwitter ID
+ * @param text 編集対象のメモ内容
  */
-const importData = (event: Event) => {
-  const file = (event.target as HTMLInputElement).files?.[0]; // 選択されたファイルを取得
-  if (!file) {
-    alert('ファイルが選択されていません。');
-    return;
-  }
-
-  const reader = new FileReader(); // FileReader オブジェクトを作成
-  // ファイル読み込み完了時の処理を設定
-  reader.onload = (e) => {
-    try {
-      // 読み込んだ内容（文字列）を JSON としてパース
-      const parsedData = JSON.parse(e.target?.result as string);
-      // useMemoStore の importMemos 関数を呼び出し、インポートを実行
-      if (importMemos(parsedData)) {
-        alert('メモをインポートしました！現在のIDのメモを再表示します。');
-        // インポート後、現在の入力中の ID に対応するメモを再ロードして UI を更新
-        loadMemo();
-      } else {
-        alert('インポートするデータの形式が正しくありません。');
-      }
-    } catch (error) {
-      // JSON パースエラーやその他のエラーを捕捉
-      alert('ファイルの読み込み中にエラーが発生しました。JSON形式のファイルであることを確認してください。');
-      console.error('File import error:', error);
-    }
-    // 同じファイルを再度選択できるように、ファイル入力要素の値をリセット
-    (event.target as HTMLInputElement).value = '';
-  };
-  // ファイルをテキストとして読み込み開始
-  reader.readAsText(file);
-};
-
-/**
- * メモ一覧の項目（ボタン）がクリックされた際に、そのIDとメモ内容を入力欄にロードして編集可能にする
- * ユーザーにアラートで編集モードになったことを通知する
- * @param id メモのTwitter ID
- * @param text メモの内容
- */
-const editMemo = (id: string, text: string) => {
-  twitterId.value = id; // 入力欄にIDをセット
-  currentMemo.value = text; // テキストエリアにメモ内容をセット
+const handleEditMemo = (id: string, text: string) => {
+  twitterId.value = id;
+  currentMemo.value = text;
   alert(`ID: ${id} のメモを編集モードにしました。`);
 };
 
@@ -118,15 +60,6 @@ const twitterProfileUrl = computed(() => {
   // twitterId が空でない場合にのみURLを生成
   return twitterId.value ? `https://x.com/${twitterId.value}` : '#';
 });
-
-/**
- * メモ一覧で ID リンクがクリックされた際に、親要素（メモボタン）のクリックイベントのバブリングを停止する
- * これにより、ID リンククリック時に編集モードに切り替わらず、直接リンク先に遷移するようになる
- * @param event クリックイベント
- */
-const handleIdLinkClick = (event: MouseEvent) => {
-  event.stopPropagation(); // 親要素（メモボタン）のクリックイベントを発火させない
-};
 
 // コンポーネントがマウントされたときの処理 (ライフサイクルフック)
 onMounted(async () => {
@@ -207,43 +140,13 @@ onMounted(async () => {
 
     <hr> <!-- 区切り線 -->
 
-    <h2>データ管理</h2>
-    <div class="data-management-buttons">
-      <button @click="exportData" class="export-button">メモをエクスポート</button>
-      <!-- ファイル入力要素を隠し、ラベルをクリック可能にしてボタンのように見せる -->
-      <label class="import-button">
-        メモをインポート
-        <input type="file" @change="importData" accept=".json" style="display: none;">
-      </label>
-    </div>
+    <!-- データ管理コンポーネントを配置し、イベントをハンドリング -->
+    <DataManagement @import-success="handleImportSuccess" />
 
     <hr> <!-- 区切り線 -->
 
-    <h2>保存済みメモ一覧</h2>
-    <div class="memo-list-container">
-      <p v-if="memos.length === 0">まだメモは保存されていません。</p>
-      <ul v-else class="memo-list">
-        <!-- 各メモアイテムをボタンとして表示 -->
-        <li v-for="memoItem in memos" :key="memoItem.id" class="memo-item-wrapper">
-          <button @click="editMemo(memoItem.id, memoItem.text)" class="memo-item-button">
-            <div class="memo-item-content">
-              <!-- IDの文字列をリンクにする -->
-              <strong>ID:
-                <a :href="`https://x.com/${memoItem.id}`"
-                   target="_blank"
-                   rel="noopener noreferrer"
-                   @click="handleIdLinkClick"
-                   class="memo-id-link">
-                  {{ memoItem.id }}
-                </a>
-              </strong>
-              <p>{{ memoItem.text }}</p>
-            </div>
-            <!-- 必要に応じて編集アイコンなどを追加することも可能 -->
-          </button>
-        </li>
-      </ul>
-    </div>
+    <!-- メモリストコンポーネントを配置し、memos を props として渡し、イベントをハンドリング -->
+    <MemoList :memos="memos" @edit-memo="handleEditMemo" />
   </div>
 </template>
 
@@ -257,7 +160,7 @@ onMounted(async () => {
   font-family: 'Inter', sans-serif;
 }
 
-h1, h2 {
+h1 {
   color: var(--header-color);
 }
 
@@ -286,69 +189,29 @@ textarea:focus {
   border-color: var(--input-focus-border);
 }
 
-/* ボタンの共通スタイル */
-button {
+/* 保存ボタンのスタイル */
+.save-button {
   padding: 0.75em 1.5em;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  margin-right: 10px;
   transition: background-color 0.3s ease, transform 0.1s ease;
   font-weight: bold;
-}
-
-button:active {
-  transform: translateY(1px);
-}
-
-.save-button {
   background-color: var(--button-save-bg);
   color: white;
 }
 .save-button:hover {
   background-color: var(--button-save-hover);
 }
-
-.export-button {
-  background-color: var(--button-export-bg);
-  color: var(--button-export-text);
-}
-.export-button:hover {
-  background-color: var(--button-export-hover);
-}
-
-.import-button {
-  display: inline-block;
-  padding: 0.75em 1.5em;
-  background-color: var(--button-import-bg);
-  color: white; /* インポートボタンは常に白文字 */
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1em;
-  line-height: 1;
-  text-align: center;
-  vertical-align: middle;
-  transition: background-color 0.3s ease, transform 0.1s ease;
-  font-weight: bold;
-}
-.import-button:hover {
-  background-color: var(--button-import-hover);
-}
-.import-button:active {
+.save-button:active {
   transform: translateY(1px);
 }
+
 
 hr {
   margin: 2em 0;
   border: none;
   border-top: 1px solid var(--hr-color);
-}
-
-.data-management-buttons {
-  margin-top: 1em;
-  display: flex;
-  gap: 10px;
 }
 
 /* Twitterプロフィールリンクのスタイル */
@@ -379,71 +242,5 @@ hr {
   height: 14px;
   color: var(--link-color);
   transition: color 0.3s ease;
-}
-
-/* メモ一覧のスタイル */
-.memo-list-container {
-  margin-top: 1em;
-  border: 1px solid var(--memo-list-border);
-  border-radius: 8px;
-  padding: 15px;
-  background-color: var(--memo-list-bg);
-}
-
-.memo-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.memo-item-wrapper {
-  margin-bottom: 10px;
-}
-.memo-item-wrapper:last-child {
-  margin-bottom: 0;
-}
-
-.memo-item-button {
-  width: 100%;
-  background-color: var(--memo-item-bg);
-  border: 1px solid var(--memo-item-border);
-  color: var(--text-color); /* メモアイテムの文字色 */
-  text-align: left;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px var(--memo-item-shadow);
-  display: block;
-  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.memo-item-button:hover {
-  background-color: var(--memo-item-hover-bg);
-  border-color: var(--memo-item-hover-border);
-  box-shadow: 0 4px 8px var(--memo-item-hover-shadow);
-}
-
-.memo-item-content strong {
-  color: var(--memo-item-id-color);
-  display: block;
-  margin-bottom: 5px;
-  font-size: 1.1em;
-}
-
-.memo-item-content p {
-  margin: 0;
-  color: var(--memo-item-text-color);
-  font-size: 0.95em;
-}
-
-/* メモアイテム内のIDリンクのスタイル */
-.memo-id-link {
-  color: var(--link-color);
-  text-decoration: none;
-  transition: color 0.3s ease, text-decoration 0.3s ease;
-}
-
-.memo-id-link:hover {
-  text-decoration: underline;
-  color: var(--link-hover);
 }
 </style>
