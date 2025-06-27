@@ -26,7 +26,7 @@ export default defineConfig({
           },
         ],
         share_target: {
-          action: '/share-target', // 共有されたデータを受け取るURL
+          action: '/', // 共有されたデータを受け取るURL
           method: 'GET',           // または 'POST'
           params: {
             title: 'title',        // 共有データに含まれるタイトル
