@@ -24,9 +24,11 @@ onMounted(async () => {
   console.log('Full URL:', window.location.href);
   console.log('Query Parameters:', Array.from(urlParams.entries()));
 
-  const sharedUrl = urlParams.get('text'); // TwitterはURLを'text'パラメータで渡す
-
+  let sharedUrl = urlParams.get('text'); // TwitterはURLを'text'パラメータで渡す
   if (sharedUrl) {
+    sharedUrl = sharedUrl.split('?')[0]; // クエリパラメータを削除
+    sharedUrl = sharedUrl.split('.com/')[1]; // ドメイン部分を削除
+
     console.log('Shared URL found:', sharedUrl);
     twitterUrl.value = sharedUrl;
     loadMemo();
@@ -40,8 +42,8 @@ onMounted(async () => {
 <template>
   <h1>Twitterプロフィール メモ</h1>
   <div>
-    <label for="twitter-url">TwitterプロフィールURL:</label>
-    <input type="url" id="twitter-url" v-model="twitterUrl" @input="loadMemo" placeholder="例: https://twitter.com/elonmusk">
+    <label for="twitter-id">Twitter ID:</label>
+    <input type="url" id="twitter-id" v-model="twitterUrl" @input="loadMemo" placeholder="例: elonmusk">
   </div>
   <div v-if="twitterUrl">
     <label for="memo">メモ:</label>
@@ -49,7 +51,7 @@ onMounted(async () => {
     <button @click="saveCurrentMemo">保存</button>
   </div>
   <div v-else>
-    URLを入力するとメモが表示されます。
+    Twitter ID を入力するとメモが表示されます。
   </div>
 </template>
 
