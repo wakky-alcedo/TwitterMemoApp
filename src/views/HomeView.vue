@@ -248,49 +248,49 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-/* 全体のコンテナとダークテーマの基本設定 */
+/* 全体のコンテナスタイル */
 .app-container {
-  background-color: #1a202c; /* ダークチャコール */
-  color: #e2e8f0; /* 明るいグレーブルー */
-  min-height: 100vh; /* 画面全体を覆う */
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  min-height: 100vh;
   padding: 20px;
-  font-family: 'Inter', sans-serif; /* Google FontsのInterを使用 */
+  font-family: 'Inter', sans-serif;
 }
 
 h1, h2 {
-  color: #a0aec0; /* 見出しの色を明るめに */
+  color: var(--header-color);
 }
 
 label {
   display: block;
   margin-bottom: 0.5em;
-  color: #a0aec0;
+  color: var(--label-color);
 }
 
 input[type="text"],
 textarea {
   width: 100%;
-  padding: 0.75em; /* パディングを少し増やす */
+  padding: 0.75em;
   margin-bottom: 1em;
-  border: 1px solid #4a5568; /* 暗いボーダー */
-  border-radius: 8px; /* 角を丸く */
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
   box-sizing: border-box;
-  background-color: #2d3748; /* 暗い背景 */
-  color: #e2e8f0;
+  background-color: var(--input-bg);
+  color: var(--text-color);
   transition: border-color 0.3s ease;
 }
 
 input[type="text"]:focus,
 textarea:focus {
   outline: none;
-  border-color: #63b3ed; /* フォーカス時のボーダー色 */
+  border-color: var(--input-focus-border);
 }
 
-/* ボタンのスタイル */
+/* ボタンの共通スタイル */
 button {
   padding: 0.75em 1.5em;
   border: none;
-  border-radius: 8px; /* 角を丸く */
+  border-radius: 4px;
   cursor: pointer;
   margin-right: 10px;
   transition: background-color 0.3s ease, transform 0.1s ease;
@@ -298,32 +298,32 @@ button {
 }
 
 button:active {
-  transform: translateY(1px); /* クリック時の押し込みエフェクト */
+  transform: translateY(1px);
 }
 
 .save-button {
-  background-color: #4299e1; /* 青 */
+  background-color: var(--button-save-bg);
   color: white;
 }
 .save-button:hover {
-  background-color: #3182ce;
+  background-color: var(--button-save-hover);
 }
 
 .export-button {
-  background-color: #ecc94b; /* 黄色/ゴールド */
-  color: #1a202c; /* ダーク系の文字色 */
+  background-color: var(--button-export-bg);
+  color: var(--button-export-text);
 }
 .export-button:hover {
-  background-color: #d69e2e;
+  background-color: var(--button-export-hover);
 }
 
 .import-button {
   display: inline-block;
   padding: 0.75em 1.5em;
-  background-color: #68d391; /* 明るい緑 */
-  color: #1a202c;
+  background-color: var(--button-import-bg);
+  color: white; /* インポートボタンは常に白文字 */
   border: none;
-  border-radius: 8px;
+  border-radius: 4px;
   cursor: pointer;
   font-size: 1em;
   line-height: 1;
@@ -333,7 +333,7 @@ button:active {
   font-weight: bold;
 }
 .import-button:hover {
-  background-color: #48bb78;
+  background-color: var(--button-import-hover);
 }
 .import-button:active {
   transform: translateY(1px);
@@ -342,7 +342,7 @@ button:active {
 hr {
   margin: 2em 0;
   border: none;
-  border-top: 1px solid #4a5568; /* 暗い区切り線 */
+  border-top: 1px solid var(--hr-color);
 }
 
 .data-management-buttons {
@@ -354,16 +354,16 @@ hr {
 /* Twitterプロフィールリンクのスタイル */
 .twitter-profile-link-container {
   margin-top: -0.5em;
-  margin-bottom: 1.5em; /* 下の要素との間隔を少し広げる */
+  margin-bottom: 1.5em;
 }
 
 .twitter-profile-link {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: #63b3ed; /* 明るい青のリンク色 */
+  color: var(--link-color);
   text-decoration: none;
-  font-size: 0.95em; /* 少し大きく */
+  font-size: 0.95em;
   font-weight: 500;
   padding: 5px 0;
   transition: color 0.3s ease;
@@ -371,23 +371,23 @@ hr {
 
 .twitter-profile-link:hover {
   text-decoration: underline;
-  color: #4299e1; /* ホバー時の色 */
+  color: var(--link-hover);
 }
 
 .external-link-icon {
   width: 14px;
   height: 14px;
-  color: #63b3ed; /* アイコンの色 */
+  color: var(--link-color);
   transition: color 0.3s ease;
 }
 
 /* メモ一覧のスタイル */
 .memo-list-container {
   margin-top: 1em;
-  border: 1px solid #4a5568; /* 暗いボーダー */
+  border: 1px solid var(--memo-list-border);
   border-radius: 8px;
   padding: 15px;
-  background-color: #2d3748; /* 暗い背景 */
+  background-color: var(--memo-list-bg);
 }
 
 .memo-list {
@@ -397,33 +397,33 @@ hr {
 }
 
 .memo-item-wrapper {
-  margin-bottom: 10px; /* 各メモボタン間のスペース */
+  margin-bottom: 10px;
 }
 .memo-item-wrapper:last-child {
   margin-bottom: 0;
 }
 
 .memo-item-button {
-  width: 100%; /* 親要素の幅いっぱいに広げる */
-  background-color: #4a5568; /* メモアイテムの暗い背景 */
-  border: 1px solid #667eea; /* 少し紫がかった青のボーダー */
-  color: #e2e8f0; /* 明るい文字色 */
-  text-align: left; /* テキストを左揃え */
-  padding: 15px; /* パディングを増やす */
-  border-radius: 8px; /* 角を丸く */
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2); /* 影を濃く */
-  display: block; /* ブロック要素として配置 */
+  width: 100%;
+  background-color: var(--memo-item-bg);
+  border: 1px solid var(--memo-item-border);
+  color: var(--text-color); /* メモアイテムの文字色 */
+  text-align: left;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px var(--memo-item-shadow);
+  display: block;
   transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .memo-item-button:hover {
-  background-color: #5a67d8; /* ホバー時の色（少し明るい青紫） */
-  border-color: #7b8de6;
-  box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+  background-color: var(--memo-item-hover-bg);
+  border-color: var(--memo-item-hover-border);
+  box-shadow: 0 4px 8px var(--memo-item-hover-shadow);
 }
 
 .memo-item-content strong {
-  color: #63b3ed; /* IDの色 */
+  color: var(--memo-item-id-color);
   display: block;
   margin-bottom: 5px;
   font-size: 1.1em;
@@ -431,19 +431,19 @@ hr {
 
 .memo-item-content p {
   margin: 0;
-  color: #cbd5e0; /* メモ内容の色 */
+  color: var(--memo-item-text-color);
   font-size: 0.95em;
 }
 
 /* メモアイテム内のIDリンクのスタイル */
 .memo-id-link {
-  color: #63b3ed; /* IDのリンク色 */
-  text-decoration: none; /* 下線なし */
+  color: var(--link-color);
+  text-decoration: none;
   transition: color 0.3s ease, text-decoration 0.3s ease;
 }
 
 .memo-id-link:hover {
-  text-decoration: underline; /* ホバー時に下線 */
-  color: #4299e1; /* ホバー時の色 */
+  text-decoration: underline;
+  color: var(--link-hover);
 }
 </style>

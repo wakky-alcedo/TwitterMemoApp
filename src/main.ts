@@ -1,7 +1,6 @@
-import { createApp } from 'vue'
-import './style.css'
-import App from './App.vue'
-import './registerServiceWorker'
+import { createApp } from 'vue';
+import App from './App.vue';
+import './registerServiceWorker';
+import './assets/styles/themes.css'; // ★追加: テーマCSSをグローバルにインポート
 
-createApp(App).mount('#app')
-
+createApp(App).mount('#app');
