@@ -23,12 +23,11 @@ const loadMemo = () => {
 
 /**
  * 現在の Twitter ID と currentMemo の内容を localStorage に保存する
- * 保存後、ユーザーにアラートで保存完了を通知する
+ * 保存後、ユーザーへのフィードバックは UI 変更で代替
  */
 const saveCurrentMemo = () => {
   saveMemo(twitterId.value, currentMemo.value);
-  // ユーザーへのフィードバック
-  alert('メモを保存しました！');
+  // alert('メモを保存しました！'); // 保存通知のalertを削除
 };
 
 /**
@@ -36,7 +35,7 @@ const saveCurrentMemo = () => {
  * メモデータが変更された可能性があるため、現在の ID のメモを再ロードする
  */
 const handleImportSuccess = () => {
-  alert('メモがインポートされました！UIを更新します。');
+  // alert('メモがインポートされました！UIを更新します。'); // インポート完了通知のalertを削除
   loadMemo(); // 現在のIDのメモを再ロードしてUIを更新
 };
 
@@ -49,7 +48,7 @@ const handleImportSuccess = () => {
 const handleEditMemo = (id: string, text: string) => {
   twitterId.value = id;
   currentMemo.value = text;
-  alert(`ID: ${id} のメモを編集モードにしました。`);
+  // alert(`ID: ${id} のメモを編集モードにしました。`); // 編集モード通知のalertを削除
 };
 
 /**
