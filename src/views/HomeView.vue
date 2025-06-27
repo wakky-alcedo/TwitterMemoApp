@@ -108,7 +108,7 @@ onMounted(async () => {
 
 <template>
   <div class="app-container">
-    <h1>Twitterプロフィール メモ</h1>
+    <h1>Twitter プロフィール メモ</h1>
     <div>
       <label for="twitter-id">Twitter ID:</label>
       <!-- Twitter ID の入力フィールド -->
