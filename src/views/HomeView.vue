@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed } from 'vue'; // computed を再度インポート
 import useMemoStore from '../composables/useMemoStore';
 
 // Twitter ID を保持するリアクティブ変数
@@ -7,18 +7,20 @@ const twitterId = ref('');
 // 現在表示・編集中のメモの内容
 const currentMemo = ref('');
 // useMemoStore から必要な関数を取得
+// memos ref も取得することで、useMemoStore 内部の状態を直接リアクティブに利用できる
 const { saveMemo, getMemo, getAllMemos, importMemos, memos } = useMemoStore();
 
 /**
  * 現在の Twitter ID に対応するメモを localStorage からロードし、currentMemo に設定する
+ * twitterId.value は常に現在の Twitter ID を保持していることを前提とする
  */
 const loadMemo = () => {
-  // twitterId.value は常に現在の Twitter ID を保持している
   currentMemo.value = getMemo(twitterId.value);
 };
 
 /**
  * 現在の Twitter ID と currentMemo の内容を localStorage に保存する
+ * 保存後、ユーザーにアラートで保存完了を通知する
  */
 const saveCurrentMemo = () => {
   saveMemo(twitterId.value, currentMemo.value);
@@ -28,27 +30,28 @@ const saveCurrentMemo = () => {
 
 /**
  * 全てのメモデータを JSON 形式でエクスポートし、ファイルとしてダウンロードさせる
+ * メモがない場合はアラートを表示し、処理を中断する
  */
 const exportData = () => {
-  const allMemos = getAllMemos(); // 全てのメモデータを取得
+  const allMemos = getAllMemos(); // useMemoStore から全てのメモデータを取得
   if (allMemos.length === 0) {
     alert('保存されているメモがありません。');
     return;
   }
-  // JSON データを見やすいように整形して文字列化
+  // JSON データを見やすいように整形（インデント2）して文字列化
   const dataStr = JSON.stringify(allMemos, null, 2);
-  // Blob オブジェクトを作成し、application/json タイプを指定
+  // JSON 文字列を 'application/json' タイプの Blob オブジェクトとして作成
   const blob = new Blob([dataStr], { type: 'application/json' });
   // Blob から一時的な URL を生成
   const url = URL.createObjectURL(blob);
-  // ダウンロードリンクを作成
+  // ダウンロード用の <a> 要素を作成
   const a = document.createElement('a');
-  a.href = url;
+  a.href = url; // 生成したURLを設定
   a.download = 'twitter_memos_backup.json'; // ダウンロード時のファイル名を指定
-  // リンクを DOM に一時的に追加し、クリックをシミュレートしてダウンロードを開始
+  // リンクを DOM の body に一時的に追加
   document.body.appendChild(a);
-  a.click();
-  // 使用済みの一時 URL を解放し、DOM からリンクを削除
+  a.click(); // プログラム的にクリックイベントを発火させ、ダウンロードを開始
+  // 使用済みの一時 URL を解放し、DOM からリンク要素を削除
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
   alert('メモをエクスポートしました！');
@@ -56,6 +59,10 @@ const exportData = () => {
 
 /**
  * ファイルからメモデータを読み込み、localStorage にインポートする
+ * 選択されたファイルがなければアラートを表示
+ * ファイル内容を JSON としてパースし、useMemoStore の importMemos 関数を呼び出す
+ * インポート成功後、ユーザーに通知し、現在の ID のメモを再ロードして UI を更新する
+ * エラーが発生した場合は、その旨をユーザーに通知する
  * @param event ファイル選択イベント
  */
 const importData = (event: Event) => {
@@ -65,11 +72,11 @@ const importData = (event: Event) => {
     return;
   }
 
-  const reader = new FileReader();
-  // ファイル読み込み完了時の処理
+  const reader = new FileReader(); // FileReader オブジェクトを作成
+  // ファイル読み込み完了時の処理を設定
   reader.onload = (e) => {
     try {
-      // 読み込んだ内容を JSON としてパース
+      // 読み込んだ内容（文字列）を JSON としてパース
       const parsedData = JSON.parse(e.target?.result as string);
       // useMemoStore の importMemos 関数を呼び出し、インポートを実行
       if (importMemos(parsedData)) {
@@ -92,66 +99,76 @@ const importData = (event: Event) => {
 };
 
 /**
- * メモ一覧の項目をクリックした際に、そのIDとメモ内容を入力欄にロードして編集可能にする
+ * メモ一覧の項目（ボタン）がクリックされた際に、そのIDとメモ内容を入力欄にロードして編集可能にする
+ * ユーザーにアラートで編集モードになったことを通知する
  * @param id メモのTwitter ID
  * @param text メモの内容
  */
 const editMemo = (id: string, text: string) => {
-  twitterId.value = id;
-  currentMemo.value = text;
+  twitterId.value = id; // 入力欄にIDをセット
+  currentMemo.value = text; // テキストエリアにメモ内容をセット
   alert(`ID: ${id} のメモを編集モードにしました。`);
 };
 
 /**
  * Twitter ID に基づいて Twitter プロフィールURLを生成する計算プロパティ
+ * twitterId が空でない場合にのみ有効な URL を生成し、空の場合は '#' を返す
  */
 const twitterProfileUrl = computed(() => {
+  // twitterId が空でない場合にのみURLを生成
   return twitterId.value ? `https://x.com/${twitterId.value}` : '#';
 });
 
 /**
- * メモ一覧でIDリンクがクリックされた際に、イベントのバブリングを停止して編集モードに切り替わらないようにする
+ * メモ一覧で ID リンクがクリックされた際に、親要素（メモボタン）のクリックイベントのバブリングを停止する
+ * これにより、ID リンククリック時に編集モードに切り替わらず、直接リンク先に遷移するようになる
  * @param event クリックイベント
  */
 const handleIdLinkClick = (event: MouseEvent) => {
   event.stopPropagation(); // 親要素（メモボタン）のクリックイベントを発火させない
 };
 
-// コンポーネントがマウントされたときの処理
+// コンポーネントがマウントされたときの処理 (ライフサイクルフック)
 onMounted(async () => {
-  // ブラウザの URLSearchParams を使って共有されたクエリパラメータをチェック
+  // ブラウザの URLSearchParams を使って、URL のクエリパラメータを解析
   const urlParams = new URLSearchParams(window.location.search);
 
+  // デバッグ用のコンソールログ
   console.log('--- App Mounted ---');
   console.log('Full URL:', window.location.href);
   console.log('Query Parameters:', Array.from(urlParams.entries()));
 
+  // Twitter から共有された URL が 'text' パラメータに含まれていることを想定
   let sharedText = urlParams.get('text');
   if (sharedText) {
+    // 共有された URL にクエリパラメータ（例: ?t=...）が含まれている場合、それらを削除
     sharedText = sharedText.split('?')[0];
 
+    // URL から Twitter ID を抽出する正規表現
+    // 'twitter.com/' または 'x.com/' の後に続くユーザー名部分をキャプチャする
+    // '#!/' のようなハッシュバン形式にも対応
     const match = sharedText.match(/(?:twitter|x)\.com\/(?:#!\/)?([a-zA-Z0-9_]+)/);
     let extractedId: string | null = null;
 
     if (match && match[1]) {
-        extractedId = match[1];
+        extractedId = match[1]; // 正規表現で抽出された ID を使用
     } else {
-        // もしURL形式でなく、単なるID文字列が直接渡された場合など
-        // ここでは単純にそのままIDとして扱うが、厳密なバリデーションも可能
+        // もし URL 形式でなく、単なる ID 文字列が直接渡された場合など、そのまま ID として扱う
+        // ここでさらに厳密なバリデーションを追加することも可能
         extractedId = sharedText;
     }
 
     if (extractedId) {
       console.log('Shared Twitter ID found:', extractedId);
       twitterId.value = extractedId; // 抽出した ID を twitterId にセット
-      loadMemo(); // その ID のメモをロード
-      // URL から共有パラメータを削除し、クリーンな URL にする (任意だが推奨)
+      loadMemo(); // その ID のメモをロードして表示
+      // 共有パラメータを URL から削除し、クリーンな URL にする (ユーザー体験向上のため任意だが推奨)
       // window.history.replaceState({}, document.title, window.location.pathname);
     } else {
       console.log('Could not extract Twitter ID from shared text:', sharedText);
     }
   } else {
-    console.log('No shared text found.');
+    console.log('No shared text found.'); // 共有テキストが見つからなかった場合
   }
 });
 </script>
@@ -161,10 +178,14 @@ onMounted(async () => {
     <h1>Twitterプロフィール メモ</h1>
     <div>
       <label for="twitter-id">Twitter ID:</label>
+      <!-- Twitter ID の入力フィールド -->
+      <!-- input type="url" から type="text" に変更済み -->
       <input type="text" id="twitter-id" v-model="twitterId" @input="loadMemo" placeholder="例: elonmusk">
+      <!-- Twitter ID が入力されていればプロフィールへのリンクを表示 -->
       <div v-if="twitterId" class="twitter-profile-link-container">
         <a :href="twitterProfileUrl" target="_blank" rel="noopener noreferrer" class="twitter-profile-link">
           @{{ twitterId }} のプロフィールを見る
+          <!-- 外部リンクを示す SVG アイコン (Lucide Reactのexternal-linkアイコンを参考に埋め込み) -->
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="external-link-icon">
             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
             <polyline points="15 3 21 3 21 9"></polyline>
@@ -174,6 +195,7 @@ onMounted(async () => {
       </div>
     </div>
 
+    <!-- メモ入力・保存セクション。Twitter ID が入力されている場合にのみ表示 -->
     <div v-if="twitterId">
       <label for="memo">メモ:</label>
       <textarea id="memo" v-model="currentMemo" placeholder="このプロフィールについてのメモ"></textarea>
@@ -183,19 +205,19 @@ onMounted(async () => {
       Twitter ID を入力するとメモが表示されます。
     </div>
 
-  <hr> <!-- 区切り線を追加 -->
+    <hr> <!-- 区切り線 -->
 
     <h2>データ管理</h2>
     <div class="data-management-buttons">
-    <button @click="exportData">メモをエクスポート</button>
-    <!-- ファイル入力要素を隠し、ラベルをクリック可能にしてスタイルを適用 -->
+      <button @click="exportData" class="export-button">メモをエクスポート</button>
+      <!-- ファイル入力要素を隠し、ラベルをクリック可能にしてボタンのように見せる -->
       <label class="import-button">
         メモをインポート
         <input type="file" @change="importData" accept=".json" style="display: none;">
       </label>
     </div>
 
-  <hr> <!-- 区切り線を追加 -->
+    <hr> <!-- 区切り線 -->
 
     <h2>保存済みメモ一覧</h2>
     <div class="memo-list-container">
@@ -206,7 +228,15 @@ onMounted(async () => {
           <button @click="editMemo(memoItem.id, memoItem.text)" class="memo-item-button">
             <div class="memo-item-content">
               <!-- IDの文字列をリンクにする -->
-              <strong>ID: <a :href="`https://x.com/${memoItem.id}`" target="_blank" rel="noopener noreferrer" @click="handleIdLinkClick" class="memo-id-link">{{ memoItem.id }}</a></strong>
+              <strong>ID:
+                <a :href="`https://x.com/${memoItem.id}`"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   @click="handleIdLinkClick"
+                   class="memo-id-link">
+                  {{ memoItem.id }}
+                </a>
+              </strong>
               <p>{{ memoItem.text }}</p>
             </div>
             <!-- 必要に応じて編集アイコンなどを追加することも可能 -->
@@ -237,7 +267,7 @@ label {
   color: #a0aec0;
 }
 
-input[type="text"], /* type="url" から type="text" に変更 */
+input[type="text"],
 textarea {
   width: 100%;
   padding: 0.75em; /* パディングを少し増やす */
@@ -259,8 +289,6 @@ textarea:focus {
 /* ボタンのスタイル */
 button {
   padding: 0.75em 1.5em;
-  background-color: #007bff; /* 青系 */
-  color: white;
   border: none;
   border-radius: 8px; /* 角を丸く */
   cursor: pointer;
