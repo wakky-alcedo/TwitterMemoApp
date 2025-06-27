@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 
 interface Memo {
-  url: string;
+  id: string; // Twitter ID をキーとする
   text: string;
 }
 
@@ -19,18 +19,18 @@ function saveMemos() {
 }
 
 export default function useMemoStore() {
-  const saveMemo = (url: string, text: string) => {
-    const existingMemoIndex = memos.value.findIndex((memo) => memo.url === url);
+  const saveMemo = (id: string, text: string) => {
+    const existingMemoIndex = memos.value.findIndex((memo) => memo.id === id); // id で検索
     if (existingMemoIndex !== -1) {
       memos.value[existingMemoIndex].text = text;
     } else {
-      memos.value.push({ url, text });
+      memos.value.push({ id, text }); // id を使用して保存
     }
     saveMemos();
   };
 
-  const getMemo = (url: string) => {
-    return memos.value.find((memo) => memo.url === url)?.text || '';
+  const getMemo = (id: string) => {
+    return memos.value.find((memo) => memo.id === id)?.text || ''; // id で検索
   };
 
   return {
