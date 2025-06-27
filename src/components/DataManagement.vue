@@ -82,10 +82,10 @@ const emit = defineEmits(['import-success']);
 <template>
   <h2>データ管理</h2>
   <div class="data-management-buttons">
-    <button @click="exportData" class="export-button">メモをエクスポート</button>
+    <button @click="exportData" class="export-button">エクスポート</button>
     <!-- ファイル入力要素を隠し、ラベルをクリック可能にしてボタンのように見せる -->
     <label class="import-button">
-      メモをインポート
+      インポート
       <input type="file" @change="importData" accept=".json" style="display: none;">
     </label>
   </div>
@@ -110,6 +110,8 @@ button:active {
 .export-button {
   background-color: var(--button-export-bg);
   color: var(--button-export-text);
+  font-size: 1em;
+  line-height: 1;
 }
 .export-button:hover {
   background-color: var(--button-export-hover);
