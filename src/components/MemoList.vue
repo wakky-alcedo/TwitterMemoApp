@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import useMemoStore from '../composables/useMemoStore'; // `memos` を直接使わず `props` で受け取るため、不要ですが、念のため
 
 // props の定義: 親コンポーネントから memos 配列を受け取る
 const props = defineProps<{
