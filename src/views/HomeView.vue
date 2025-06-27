@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue'; // computed を再度インポート
 import useMemoStore from '../composables/useMemoStore';
 
 // Twitter ID を保持するリアクティブ変数
@@ -91,6 +91,12 @@ const importData = (event: Event) => {
   reader.readAsText(file);
 };
 
+// 計算プロパティ: twitterId に基づいて Twitter プロフィールURLを生成
+const twitterProfileUrl = computed(() => {
+  // twitterId が空でない場合にのみURLを生成
+  return twitterId.value ? `https://x.com/${twitterId.value}` : '#';
+});
+
 // コンポーネントがマウントされたときの処理
 onMounted(async () => {
   // ブラウザの URLSearchParams を使って共有されたクエリパラメータをチェック
@@ -138,9 +144,21 @@ onMounted(async () => {
   <h1>Twitterプロフィール メモ</h1>
   <div>
     <label for="twitter-id">Twitter ID:</label>
-    <!-- input type="url" から type="text" に変更 -->
     <input type="text" id="twitter-id" v-model="twitterId" @input="loadMemo" placeholder="例: elonmusk">
+    <!-- Twitter ID が入力されていればリンクを表示 -->
+    <div v-if="twitterId" class="twitter-profile-link-container">
+      <a :href="twitterProfileUrl" target="_blank" rel="noopener noreferrer" class="twitter-profile-link">
+        @{{ twitterId }} のプロフィールを見る
+        <!-- 外部リンクアイコン (Lucide Reactのexternal-linkアイコンのSVG) -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="external-link-icon">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+          <polyline points="15 3 21 3 21 9"></polyline>
+          <line x1="10" y1="14" x2="21" y2="3"></line>
+        </svg>
+      </a>
+    </div>
   </div>
+
   <div v-if="twitterId">
     <label for="memo">メモ:</label>
     <textarea id="memo" v-model="currentMemo" placeholder="このプロフィールについてのメモ"></textarea>
@@ -280,5 +298,32 @@ hr {
 .memo-item p {
   margin: 0; /* 段落のデフォルトマージンを削除 */
   color: #333;
+}
+
+/* Twitterプロフィールリンクのスタイル */
+.twitter-profile-link-container {
+  margin-top: -0.5em; /* 入力欄との間隔を調整 */
+  margin-bottom: 1em; /* 下の要素との間隔 */
+}
+
+.twitter-profile-link {
+  display: inline-flex; /* テキストとアイコンを横並びにする */
+  align-items: center; /* 垂直方向中央揃え */
+  gap: 5px; /* テキストとアイコンの間のスペース */
+  color: #007bff; /* リンクの色 */
+  text-decoration: none; /* 下線なし */
+  font-size: 0.9em;
+  font-weight: 500;
+  padding: 5px 0; /* クリックしやすいようにパディング */
+}
+
+.twitter-profile-link:hover {
+  text-decoration: underline; /* ホバー時に下線 */
+}
+
+.external-link-icon {
+  width: 14px;
+  height: 14px;
+  color: #007bff; /* アイコンの色 */
 }
 </style>
