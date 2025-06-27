@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue'; // computed をインポート
 import useMemoStore from '../composables/useMemoStore';
 
 // Twitter ID を保持するリアクティブ変数
@@ -91,6 +91,11 @@ const importData = (event: Event) => {
   reader.readAsText(file);
 };
 
+// 計算プロパティ: twitterId に基づいて Twitter プロフィールURLを生成
+const twitterProfileUrl = computed(() => {
+  return twitterId.value ? `https://x.com/${twitterId.value}` : '#';
+});
+
 // コンポーネントがマウントされたときの処理
 onMounted(async () => {
   // ブラウザの URLSearchParams を使って共有されたクエリパラメータをチェック
@@ -135,12 +140,35 @@ onMounted(async () => {
 </script>
 
 <template>
-  <h1>Twitterプロフィール メモ</h1>
+  <h3>Twitterプロフィール メモ</h3>
   <div>
     <label for="twitter-id">Twitter ID:</label>
-    <!-- input type="url" から type="text" に変更 -->
     <input type="text" id="twitter-id" v-model="twitterId" @input="loadMemo" placeholder="例: elonmusk">
   </div>
+
+  <!-- アカウント情報表示セクション -->
+  <div v-if="twitterId" class="account-info-container">
+    <div class="account-icon">
+      <!-- プレースホルダーアイコン。 Font Awesome を使う場合はCDNを読み込む必要があります -->
+      <!-- <i class="fab fa-twitter"></i> または SVG アイコン -->
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.21 -6.873L4.925 21.75H1.613l7.393 -8.45L1.001 2.25h3.34l5.318 7.025L13.725 2.25h4.519zm-2.831 16.647h-.764l-8.673 -11.45H10.1l8.674 11.45z"/>
+      </svg>
+    </div>
+    <div class="account-details">
+      <a :href="twitterProfileUrl" target="_blank" rel="noopener noreferrer" class="account-name-link">
+        @{{ twitterId }}
+        <!-- 外部リンクアイコン (例: Lucide Reactのexternal-linkアイコンのSVG) -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="external-link-icon">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+          <polyline points="15 3 21 3 21 9"></polyline>
+          <line x1="10" y1="14" x2="21" y2="3"></line>
+        </svg>
+      </a>
+      <p class="account-name-label">（アカウント名）</p>
+    </div>
+  </div>
+
   <div v-if="twitterId">
     <label for="memo">メモ:</label>
     <textarea id="memo" v-model="currentMemo" placeholder="このプロフィールについてのメモ"></textarea>
@@ -183,7 +211,7 @@ label {
   margin-bottom: 0.5em;
 }
 
-input[type="text"], /* type="url" から type="text" に変更 */
+input[type="text"],
 textarea {
   width: 100%;
   padding: 0.5em;
@@ -196,51 +224,51 @@ textarea {
 /* ボタンのスタイル */
 button {
   padding: 0.75em 1.5em;
-  background-color: #007bff; /* 青系 */
+  background-color: #007bff; /* Blue */
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  margin-right: 10px; /* ボタン間のスペース */
-  transition: background-color 0.3s ease; /* ホバーアニメーション */
+  margin-right: 10px;
+  transition: background-color 0.3s ease;
 }
 
 button:hover {
-  background-color: #0056b3; /* ホバー時の色 */
+  background-color: #0056b3;
 }
 
 /* 区切り線のスタイル */
 hr {
-  margin: 2em 0; /* 上下の余白 */
+  margin: 2em 0;
   border: none;
-  border-top: 1px solid #eee; /* 薄い灰色の線 */
+  border-top: 1px solid #eee;
 }
 
 /* データ管理ボタンのコンテナスタイル */
 .data-management-buttons {
   margin-top: 1em;
-  display: flex; /* ボタンを横並びにする */
-  gap: 10px; /* ボタン間の隙間 */
+  display: flex;
+  gap: 10px;
 }
 
 /* インポートボタンのカスタムスタイル */
 .import-button {
-  display: inline-block; /* ボタンのように振る舞わせる */
+  display: inline-block;
   padding: 0.75em 1.5em;
-  background-color: #28a745; /* 緑系 */
+  background-color: #28a745; /* Green */
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 1em;
-  line-height: 1; /* テキストの垂直方向の位置を調整 */
+  line-height: 1;
   text-align: center;
   vertical-align: middle;
-  transition: background-color 0.3s ease; /* ホバーアニメーション */
+  transition: background-color 0.3s ease;
 }
 
 .import-button:hover {
-  background-color: #218838; /* ホバー時の色 */
+  background-color: #218838;
 }
 
 /* メモ一覧のスタイル */
@@ -253,7 +281,7 @@ hr {
 }
 
 .memo-list {
-  list-style: none; /* リストの点を削除 */
+  list-style: none;
   padding: 0;
   margin: 0;
 }
@@ -268,17 +296,76 @@ hr {
 }
 
 .memo-item:last-child {
-  margin-bottom: 0; /* 最後の子要素の下マージンを削除 */
+  margin-bottom: 0;
 }
 
 .memo-item strong {
   color: #007bff;
-  display: block; /* IDとメモ内容を分けて表示 */
+  display: block;
   margin-bottom: 5px;
 }
 
 .memo-item p {
-  margin: 0; /* 段落のデフォルトマージンを削除 */
+  margin: 0;
   color: #333;
+}
+
+/* アカウント情報表示用のスタイル */
+.account-info-container {
+  display: flex; /* アイコンと詳細を横並びにする */
+  align-items: center; /* 垂直方向中央揃え */
+  gap: 10px; /* アイコンと詳細の間のスペース */
+  margin-bottom: 1em; /* 下の要素との間隔 */
+  padding: 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #f0f8ff; /* Light blue background */
+}
+
+.account-icon {
+  width: 40px; /* アイコンのサイズ */
+  height: 40px;
+  background-color: #1DA1F2; /* Twitter Blue */
+  border-radius: 50%; /* 丸いアイコン */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white; /* アイコンの色 */
+  font-size: 1.5em; /* SVGアイコンのサイズに合わせて調整 */
+}
+
+.account-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.account-details {
+  flex-grow: 1; /* 残りのスペースを埋める */
+}
+
+.account-name-link {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #007bff; /* リンクの色 */
+  text-decoration: none; /* 下線なし */
+  display: flex;
+  align-items: center;
+  gap: 5px; /* IDと外部リンクアイコンの隙間 */
+}
+
+.account-name-link:hover {
+  text-decoration: underline; /* ホバー時に下線 */
+}
+
+.account-name-label {
+  font-size: 0.9em;
+  color: #666;
+  margin-top: 2px;
+}
+
+.external-link-icon {
+  width: 14px;
+  height: 14px;
+  color: #007bff;
 }
 </style>
