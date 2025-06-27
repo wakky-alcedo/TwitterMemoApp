@@ -74,3 +74,13 @@
     --memo-item-text-color: #cbd5e0;
   }
 }
+
+/* HTMLとBody要素にテーマカラーを適用して、ページ全体の背景と文字色を制御 */
+html, body {
+  background-color: var(--bg-color); /* 背景色をテーマ変数から取得 */
+  color: var(--text-color); /* 文字色をテーマ変数から取得 */
+  transition: background-color 0.3s ease, color 0.3s ease; /* スムーズなテーマ切り替え */
+  margin: 0; /* デフォルトのマージンをリセット */
+  padding: 0; /* デフォルトのパディングをリセット */
+  min-height: 100vh; /* 少なくともビューポートの高さにする */
+}
