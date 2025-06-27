@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue'; // onMounted をインポート
 import useMemoStore from '../composables/useMemoStore';
 
 const twitterUrl = ref('');
@@ -14,6 +14,20 @@ const saveCurrentMemo = () => {
   saveMemo(twitterUrl.value, currentMemo.value);
   alert('メモを保存しました！');
 };
+
+onMounted(async () => {
+  // ブラウザのURLSearchParamsを使って共有されたパラメータをチェック
+  const urlParams = new URLSearchParams(window.location.search);
+  const sharedUrl = urlParams.get('url'); // manifest.jsonで 'url' と指定したパラメータ名
+
+  if (sharedUrl) {
+    twitterUrl.value = sharedUrl;
+    loadMemo(); // 共有されたURLでメモをロード
+    // URLから共有パラメータを削除し、クリーンなURLにする（任意だが推奨）
+    // window.history.replaceState({}, document.title, window.location.pathname);
+  }
+});
+
 </script>
 
 <template>
