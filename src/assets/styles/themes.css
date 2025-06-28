@@ -1,0 +1,86 @@
+/* src/assets/styles/themes.css */
+
+/* CSS変数をルートに定義し、システムテーマによって切り替え */
+:root {
+  /* ライトテーマのデフォルト値 - 明るくシンプルな基調 */
+  --bg-color: #ffffff; /* 白い背景 */
+  --text-color: #333; /* 標準的な黒っぽい文字色 */
+  --header-color: #333; /* 標準的な見出し色 */
+  --label-color: #555; /* ラベルの色 */
+  --input-bg: #fff; /* 白い入力フィールド背景 */
+  --input-border: #ccc; /* 薄いグレーの入力フィールドボーダー */
+  --input-focus-border: #007bff; /* 青色のフォーカスボーダー */
+  --hr-color: #eee; /* 薄い灰色の区切り線 */
+
+  /* ボタンの色 */
+  --button-save-bg: #007bff; /* 保存ボタン：標準的な青 */
+  --button-save-hover: #0056b3;
+  --button-export-bg: #17a2b8; /* エクスポートボタン：情報を示す青緑系 */
+  --button-export-hover: #138496;
+  --button-import-bg: #28a745; /* インポートボタン：成功を示す緑 */
+  --button-import-hover: #218838;
+
+  /* リンクの色 */
+  --link-color: #1da1f2; /* Twitterブルー */
+  --link-hover: #0c85d0;
+
+  /* メモ一覧の背景とボーダー */
+  --memo-list-border: #ddd;
+  --memo-list-bg: #fff;
+  --memo-item-bg: #f8f9fa; /* 各メモアイテムの背景 */
+  --memo-item-border: #e9ecef;
+  --memo-item-shadow: rgba(0,0,0,0.1); /* 影 */
+  --memo-item-hover-bg: #e2e6ea;
+  --memo-item-hover-border: #d3d7da;
+  --memo-item-hover-shadow: rgba(0,0,0,0.15);
+  --memo-item-id-color: #007bff; /* メモアイテムのID色 */
+  --memo-item-text-color: #555; /* メモアイテムのテキスト色 */
+}
+
+/* ダークテーマのスタイル - prefers-color-scheme が dark の場合に適用 */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: #1a202c; /* ダークチャコール */
+    --text-color: #e2e8f0; /* 明るいグレーブルー */
+    --header-color: #a0aec0; /* 明るめのグレー */
+    --label-color: #a0aec0;
+    --input-bg: #2d3748; /* 暗めの入力フィールド背景 */
+    --input-border: #4a5568; /* 暗めの入力フィールドボーダー */
+    --input-focus-border: #63b3ed; /* 明るい青のフォーカスボーダー */
+    --hr-color: #4a5568; /* 暗めの区切り線 */
+
+    /* ボタンの色 (ダークテーマ用) */
+    --button-save-bg: #4299e1; /* 青 */
+    --button-save-hover: #3182ce;
+    --button-export-bg: #2a656e; /* エクスポートボタン：ダークテーマに合う青緑系 */
+    --button-export-hover: #1e4f57;
+    --button-import-bg: #48bb78; /* 明るい緑 */
+    --button-import-hover: #38a169;
+
+    /* リンクの色 (ダークテーマ用) */
+    --link-color: #63b3ed; /* 明るい青のリンク色 */
+    --link-hover: #4299e1;
+
+    /* メモ一覧の背景とボーダー (ダークテーマ用) */
+    --memo-list-border: #4a5568;
+    --memo-list-bg: #2d3748;
+    --memo-item-bg: #4a5568;
+    --memo-item-border: #667eea;
+    --memo-item-shadow: rgba(0,0,0,0.2);
+    --memo-item-hover-bg: #5a67d8;
+    --memo-item-hover-border: #7b8de6;
+    --memo-item-hover-shadow: rgba(0,0,0,0.3);
+    --memo-item-id-color: #63b3ed;
+    --memo-item-text-color: #cbd5e0;
+  }
+}
+
+/* HTMLとBody要素にテーマカラーを適用して、ページ全体の背景と文字色を制御 */
+html, body {
+  background-color: var(--bg-color); /* 背景色をテーマ変数から取得 */
+  color: var(--text-color); /* 文字色をテーマ変数から取得 */
+  transition: background-color 0.3s ease, color 0.3s ease; /* スムーズなテーマ切り替え */
+  margin: 0; /* デフォルトのマージンをリセット */
+  padding: 0; /* デフォルトのパディングをリセット */
+  min-height: 100vh; /* 少なくともビューポートの高さにする */
+}
