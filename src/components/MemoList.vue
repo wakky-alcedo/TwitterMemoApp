@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // props の定義: 親コンポーネントから memos 配列を受け取る
 const props = defineProps<{
-  memos: Array<{ id: string; text: string; timestamp: string; createdAt: string }>; // ★修正: createdAt を追加
+  memos: Array<{ id: string; text: string; timestamp: string; createdAt: string }>;
 }>();
 
 // 親コンポーネントへのイベント発行を定義
@@ -52,8 +52,9 @@ const handleIdLinkClick = (event: MouseEvent) => {
               </strong>
               <!-- タイムスタンプグループ -->
               <div class="memo-timestamps">
-                <span class="memo-timestamp">最終更新日: {{ memoItem.timestamp }}</span>
-                <span class="memo-created-at">作成日: {{ memoItem.createdAt }}</span>
+                <!-- ラベルを短縮 -->
+                <span class="memo-timestamp">更新: {{ memoItem.timestamp }}</span>
+                <span class="memo-created-at">作成: {{ memoItem.createdAt }}</span>
               </div>
             </div>
             <p>{{ memoItem.text }}</p>
@@ -134,7 +135,7 @@ const handleIdLinkClick = (event: MouseEvent) => {
   display: flex;
   flex-direction: column; /* 日付を縦に並べる */
   align-items: flex-end; /* 右揃え */
-  flex-shrink: 0; /* 縮小しない */
+  flex-shrink: 1; /* ★修正: 縮小を許可 */
   margin-left: 10px; /* IDグループとの間隔 */
 }
 
