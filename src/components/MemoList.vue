@@ -8,6 +8,25 @@ const props = defineProps<{
 const emit = defineEmits(['edit-memo']);
 
 /**
+ * 日付文字列 (yyyy/MM/dd) を yy/MM/dd 形式にフォーマットするヘルパー関数
+ * @param dateString yyyy/MM/dd 形式の日付文字列
+ * @returns yy/MM/dd 形式の短い日付文字列
+ */
+const formatShortDate = (dateString: string): string => {
+  // Dateオブジェクトは yyyy-MM-dd 形式の文字列を推奨するため、ハイフンに変換
+  const dateParts = dateString.split('/');
+  if (dateParts.length === 3) {
+    const formatted = `${dateParts[0]}-${dateParts[1]}-${dateParts[2]}`;
+    const date = new Date(formatted);
+    // 有効な日付か確認
+    if (!isNaN(date.getTime())) {
+      return date.toLocaleDateString('ja-JP', { year: '2-digit', month: '2-digit', day: '2-digit' });
+    }
+  }
+  return dateString; // フォーマットできない場合は元の文字列を返す
+};
+
+/**
  * メモ一覧の項目（ボタン）がクリックされた際に、そのIDとメモ内容を親コンポーネントに通知し、編集可能にする
  * @param id メモのTwitter ID
  * @param text メモの内容
@@ -47,14 +66,14 @@ const handleIdLinkClick = (event: MouseEvent) => {
                    rel="noopener noreferrer"
                    @click="handleIdLinkClick"
                    class="memo-id-link">
-                  @{{ memoItem.id }}
+                  ID: {{ memoItem.id }}
                 </a>
               </strong>
               <!-- タイムスタンプグループ -->
               <div class="memo-timestamps">
-                <!-- ラベルを短縮 -->
-                <span class="memo-timestamp">更新: {{ memoItem.timestamp }}</span>
-                <span class="memo-created-at">作成: {{ memoItem.createdAt }}</span>
+                <!-- ラベルを短縮し、日付を yy/MM/dd 形式で表示 -->
+                <span class="memo-timestamp">更新: {{ formatShortDate(memoItem.timestamp) }}</span>
+                <span class="memo-created-at">作成: {{ formatShortDate(memoItem.createdAt) }}</span>
               </div>
             </div>
             <p>{{ memoItem.text }}</p>
@@ -135,7 +154,7 @@ const handleIdLinkClick = (event: MouseEvent) => {
   display: flex;
   flex-direction: column; /* 日付を縦に並べる */
   align-items: flex-end; /* 右揃え */
-  flex-shrink: 1; /* ★修正: 縮小を許可 */
+  flex-shrink: 1; /* 縮小を許可 */
   margin-left: 10px; /* IDグループとの間隔 */
 }
 

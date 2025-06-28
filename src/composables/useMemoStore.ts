@@ -5,8 +5,8 @@ import { ref } from 'vue';
 interface Memo {
   id: string; // Twitter ID をメモのキーとして使用
   text: string; // メモの内容
-  timestamp: string; // メモが最後に保存または更新された日付/時刻 (最終更新日)
-  createdAt: string; // ★追加: メモが最初に作成された日付 (作成日)
+  timestamp: string; // メモが最後に保存または更新された日付/時刻 (最終更新日) yyyy/MM/dd 形式
+  createdAt: string; // メモが最初に作成された日付 (作成日) yyyy/MM/dd 形式
 }
 
 // localStorage に保存するキー名
@@ -25,6 +25,7 @@ function loadMemos(): Memo[] {
   return loadedMemos.map(memo => {
     if (!memo.createdAt) {
       // createdAt がない場合、timestamp を作成日として設定
+      // timestamp も古い yy/MM/dd 形式かもしれないが、ここではそのまま代入
       memo.createdAt = memo.timestamp;
     }
     return memo;
@@ -38,24 +39,32 @@ function saveMemos() {
 // メモ管理のための Composable 関数
 export default function useMemoStore() {
   /**
+   * 日付を yyyy/MM/dd 形式で取得するヘルパー関数
+   * @returns フォーマットされた日付文字列
+   */
+  const getFormattedDate = (): string => {
+    const now = new Date();
+    // yyyy/MM/dd 形式で取得
+    return now.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  };
+
+  /**
    * 指定された Twitter ID と内容でメモを保存または更新する
    * @param id Twitter ID
    * @param text メモの内容
    */
   const saveMemo = (id: string, text: string) => {
-    // 現在の日付を yy/MM/dd 形式で取得
-    const now = new Date();
-    const formattedDate = now.toLocaleDateString('ja-JP', { year: '2-digit', month: '2-digit', day: '2-digit' });
+    const formattedCurrentDate = getFormattedDate(); // yyyy/MM/dd 形式で取得
 
     const existingMemoIndex = memos.value.findIndex((memo) => memo.id === id); // ID で検索
     if (existingMemoIndex !== -1) {
       // 既存のメモがあれば内容とタイムスタンプ (最終更新日) を更新
       memos.value[existingMemoIndex].text = text;
-      memos.value[existingMemoIndex].timestamp = formattedDate; // 最終更新日を更新
+      memos.value[existingMemoIndex].timestamp = formattedCurrentDate; // 最終更新日を更新
       // createdAt は既存のものを保持し、更新しない
     } else {
       // なければ新しいメモとして ID、内容、最終更新日、作成日を追加
-      memos.value.push({ id, text, timestamp: formattedDate, createdAt: formattedDate });
+      memos.value.push({ id, text, timestamp: formattedCurrentDate, createdAt: formattedCurrentDate }); // 作成日も yyyy/MM/dd 形式で設定
     }
     saveMemos(); // 変更を localStorage に保存
   };
@@ -87,7 +96,7 @@ export default function useMemoStore() {
   const importMemos = (newMemos: Memo[]): boolean => {
     try {
       // インポートするデータが配列であり、各要素が 'id' と 'text' を持つか簡単な形式チェック
-      // 'timestamp' も 'createdAt' も必須とする
+      // 'timestamp' も必須とする。'createdAt' はオプション扱いとする（古いデータとの互換性のため）
       if (!Array.isArray(newMemos) || !newMemos.every(memo => typeof memo === 'object' && memo !== null && 'id' in memo && 'text' in memo && 'timestamp' in memo)) {
         console.error("Invalid data format for import. Expected array of objects with 'id', 'text', and 'timestamp' properties.");
         return false; // 形式が不正な場合はインポート失敗
@@ -96,8 +105,10 @@ export default function useMemoStore() {
       // インポート時に createdAt がない場合のフォールバック処理
       const processedMemos: Memo[] = newMemos.map(memo => {
           if (!memo.createdAt) {
-              memo.createdAt = memo.timestamp; // createdAt がなければ timestamp を代用
+              // createdAt が存在しない場合、timestamp を代用する
+              memo.createdAt = memo.timestamp;
           }
+          // timestamp と createdAt が yyyy/MM/dd 形式であることを前提とする
           return memo as Memo; // Memo型としてアサート
       });
 
