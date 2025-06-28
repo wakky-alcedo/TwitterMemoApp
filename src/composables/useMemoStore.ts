@@ -5,7 +5,8 @@ import { ref } from 'vue';
 interface Memo {
   id: string; // Twitter ID をメモのキーとして使用
   text: string; // メモの内容
-  timestamp: string; // ★追加: メモが保存された日付/時刻
+  timestamp: string; // メモが最後に保存または更新された日付/時刻 (最終更新日)
+  createdAt: string; // ★追加: メモが最初に作成された日付 (作成日)
 }
 
 // localStorage に保存するキー名
@@ -18,10 +19,18 @@ const memos = ref<Memo[]>(loadMemos());
 function loadMemos(): Memo[] {
   const stored = localStorage.getItem(MEMO_KEY);
   // localStorage にデータがあれば JSON としてパースし、なければ空の配列を返す
-  return stored ? JSON.parse(stored) : [];
+  const loadedMemos: Memo[] = stored ? JSON.parse(stored) : [];
+
+  // 古いデータ形式（createdAt がない）の対応
+  return loadedMemos.map(memo => {
+    if (!memo.createdAt) {
+      // createdAt がない場合、timestamp を作成日として設定
+      memo.createdAt = memo.timestamp;
+    }
+    return memo;
+  });
 }
 
-// 現在のメモデータを localStorage に保存する関数
 function saveMemos() {
   localStorage.setItem(MEMO_KEY, JSON.stringify(memos.value));
 }
@@ -40,12 +49,13 @@ export default function useMemoStore() {
 
     const existingMemoIndex = memos.value.findIndex((memo) => memo.id === id); // ID で検索
     if (existingMemoIndex !== -1) {
-      // 既存のメモがあれば内容とタイムスタンプを更新
+      // 既存のメモがあれば内容とタイムスタンプ (最終更新日) を更新
       memos.value[existingMemoIndex].text = text;
-      memos.value[existingMemoIndex].timestamp = formattedDate; // ★更新: タイムスタンプを更新
+      memos.value[existingMemoIndex].timestamp = formattedDate; // 最終更新日を更新
+      // createdAt は既存のものを保持し、更新しない
     } else {
-      // なければ新しいメモとして ID、内容、タイムスタンプを追加
-      memos.value.push({ id, text, timestamp: formattedDate }); // ★追加: タイムスタンプを追加
+      // なければ新しいメモとして ID、内容、最終更新日、作成日を追加
+      memos.value.push({ id, text, timestamp: formattedDate, createdAt: formattedDate });
     }
     saveMemos(); // 変更を localStorage に保存
   };
@@ -53,7 +63,7 @@ export default function useMemoStore() {
   /**
    * 指定された Twitter ID のメモを取得する
    * @param id Twitter ID
-   * @returns メモのオブジェクト、または undefined
+   * @returns メモの内容、または空文字列
    */
   const getMemo = (id: string): string => {
     // ID に一致するメモを検索し、その内容を返す。見つからなければ空文字列。
@@ -77,12 +87,21 @@ export default function useMemoStore() {
   const importMemos = (newMemos: Memo[]): boolean => {
     try {
       // インポートするデータが配列であり、各要素が 'id' と 'text' を持つか簡単な形式チェック
-      // timestamp フィールドも必須にする場合はここに追加
+      // 'timestamp' も 'createdAt' も必須とする
       if (!Array.isArray(newMemos) || !newMemos.every(memo => typeof memo === 'object' && memo !== null && 'id' in memo && 'text' in memo && 'timestamp' in memo)) {
         console.error("Invalid data format for import. Expected array of objects with 'id', 'text', and 'timestamp' properties.");
         return false; // 形式が不正な場合はインポート失敗
       }
-      memos.value = newMemos; // 全てのメモを新しいデータで上書き
+
+      // インポート時に createdAt がない場合のフォールバック処理
+      const processedMemos: Memo[] = newMemos.map(memo => {
+          if (!memo.createdAt) {
+              memo.createdAt = memo.timestamp; // createdAt がなければ timestamp を代用
+          }
+          return memo as Memo; // Memo型としてアサート
+      });
+
+      memos.value = processedMemos; // 全てのメモを新しいデータで上書き
       saveMemos(); // 変更を localStorage に保存
       console.log('Memos imported successfully.');
       return true; // インポート成功

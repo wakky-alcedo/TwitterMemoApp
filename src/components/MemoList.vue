@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // props の定義: 親コンポーネントから memos 配列を受け取る
 const props = defineProps<{
-  memos: Array<{ id: string; text: string; timestamp: string }>;
+  memos: Array<{ id: string; text: string; timestamp: string; createdAt: string }>; // ★修正: createdAt を追加
 }>();
 
 // 親コンポーネントへのイベント発行を定義
@@ -39,20 +39,25 @@ const handleIdLinkClick = (event: MouseEvent) => {
       <li v-for="memoItem in props.memos" :key="memoItem.id" class="memo-item-wrapper">
         <button @click="editMemo(memoItem.id, memoItem.text)" class="memo-item-button">
           <div class="memo-item-content">
-            <!-- IDとタイムスタンプをフレックスコンテナでラップ -->
-            <strong class="memo-header">
-              <a :href="`https://x.com/${memoItem.id}`"
-                 target="_blank"
-                 rel="noopener noreferrer"
-                 @click="handleIdLinkClick"
-                 class="memo-id-link">
-                ID: {{ memoItem.id }}
-              </a>
-              <span class="memo-timestamp"> ({{ memoItem.timestamp }})</span>
-            </strong>
+            <div class="memo-header">
+              <!-- IDの文字列をリンクにする -->
+              <strong class="memo-id-group">
+                <a :href="`https://x.com/${memoItem.id}`"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   @click="handleIdLinkClick"
+                   class="memo-id-link">
+                  @{{ memoItem.id }}
+                </a>
+              </strong>
+              <!-- タイムスタンプグループ -->
+              <div class="memo-timestamps">
+                <span class="memo-timestamp">最終更新日: {{ memoItem.timestamp }}</span>
+                <span class="memo-created-at">作成日: {{ memoItem.createdAt }}</span>
+              </div>
+            </div>
             <p>{{ memoItem.text }}</p>
           </div>
-          <!-- 必要に応じて編集アイコンなどを追加することも可能 -->
         </button>
       </li>
     </ul>
@@ -105,14 +110,32 @@ const handleIdLinkClick = (event: MouseEvent) => {
   /* ここは特に変更なし。flexを子要素に適用 */
 }
 
-/* ★追加: IDとタイムスタンプを含む行をフレックスボックスで配置 */
+/* IDとタイムスタンプを含む行をフレックスボックスで配置 */
 .memo-header {
   display: flex;
-  justify-content: space-between; /* IDを左、タイムスタンプを右に配置 */
-  align-items: center; /* 垂直方向中央揃え */
-  margin-bottom: 5px; /* 元の strong の margin-bottom を維持 */
-  font-size: 1.1em; /* 元の strong の font-size を維持 */
-  color: var(--memo-item-id-color); /* 元の strong の color を維持 */
+  justify-content: space-between; /* IDグループを左、タイムスタンプグループを右に配置 */
+  align-items: flex-start; /* 上揃え (タイムスタンプが2行になる可能性を考慮) */
+  margin-bottom: 5px;
+  /* font-size, color は子要素に任せるか、必要ならここで設定 */
+}
+
+.memo-id-group {
+  flex-shrink: 1; /* 縮小を許可 */
+  min-width: 0; /* flexアイテムの最小幅設定 */
+  white-space: nowrap; /* IDが折り返さないように */
+  overflow: hidden; /* はみ出した場合に隠す */
+  text-overflow: ellipsis; /* はみ出した場合に「...」で表示 */
+  color: var(--memo-item-id-color);
+  font-size: 1.1em;
+}
+
+
+.memo-timestamps {
+  display: flex;
+  flex-direction: column; /* 日付を縦に並べる */
+  align-items: flex-end; /* 右揃え */
+  flex-shrink: 0; /* 縮小しない */
+  margin-left: 10px; /* IDグループとの間隔 */
 }
 
 .memo-item-content p {
@@ -123,7 +146,7 @@ const handleIdLinkClick = (event: MouseEvent) => {
 
 /* メモアイテム内のIDリンクのスタイル */
 .memo-id-link {
-  color: var(--link-color); /* IDのリンク色 */
+  color: var(--link-color);
   text-decoration: none;
   transition: color 0.3s ease, text-decoration 0.3s ease;
 }
@@ -134,9 +157,14 @@ const handleIdLinkClick = (event: MouseEvent) => {
 }
 
 /* タイムスタンプのスタイル */
-.memo-timestamp {
-  font-size: 0.8em; /* IDより小さく */
+.memo-timestamp, .memo-created-at {
+  font-size: 0.75em; /* IDより小さく */
   color: var(--label-color); /* 目立ちすぎない色 */
+  white-space: nowrap; /* 折り返さない */
+}
+
+.memo-created-at {
+  margin-top: 2px; /* 最終更新日との間隔 */
 }
 
 h2 {
