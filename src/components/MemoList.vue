@@ -4,42 +4,40 @@ import { computed } from 'vue';
 // Props の定義: 親コンポーネントから memos 配列と並び替え基準を受け取る
 const props = defineProps<{
   memos: Array<{ id: string; text: string; timestamp: string; createdAt: string }>;
-  sortKey: 'id' | 'timestamp' | 'createdAt'; // ★修正: sortKey の型を具体的に指定
-  sortOrder: 'asc' | 'desc'; // ★修正: sortOrder の型を具体的に指定
+  sortKey: 'id' | 'timestamp' | 'createdAt'; // 並び替えのキー (例: 'id', 'timestamp', 'createdAt')
+  sortOrder: 'asc' | 'desc'; // 並び替えの順序 (例: 'asc', 'desc')
 }>();
 
 // 親コンポーネントへのイベント発行を定義 (sortKey と sortOrder の更新、edit-memo)
 const emit = defineEmits(['update:sortKey', 'update:sortOrder', 'edit-memo']);
 
 /**
- * 日付文字列 (yyyy/MM/dd) を yy/MM/dd 形式にフォーマットするヘルパー関数
- * @param dateString YYYY/MM/dd 形式の日付文字列
+ * 日付文字列 (ISO形式または yyyy/MM/dd) を yy/MM/dd 形式にフォーマットするヘルパー関数
+ * @param dateTimeString ISO形式または yyyy/MM/dd 形式の日付文字列
  * @returns yy/MM/dd 形式の短い日付文字列
  */
-const formatShortDate = (dateString: string): string => {
-  // DateオブジェクトはYYYY-MM-DD 形式の文字列を推奨するため、ハイフンに変換してパース
-  const dateParts = dateString.split('/');
-  if (dateParts.length === 3) {
-    const formatted = `${dateParts[0]}-${dateParts[1]}-${dateParts[2]}`;
-    const date = new Date(formatted);
-    // 有効な日付か確認
-    if (!isNaN(date.getTime())) {
-      return date.toLocaleDateString('ja-JP', { year: '2-digit', month: '2-digit', day: '2-digit' });
-    }
+const formatShortDate = (dateTimeString: string): string => {
+  // まず Date オブジェクトに変換
+  const date = new Date(dateTimeString);
+  // 有効な日付か確認
+  if (isNaN(date.getTime())) {
+    // 無効な日付の場合は元の文字列を返す（古いデータ形式などに対応）
+    return dateTimeString;
   }
-  return dateString; // フォーマットできない場合は元の文字列を返す
+  // yy/MM/dd 形式でフォーマット
+  return date.toLocaleDateString('ja-JP', { year: '2-digit', month: '2-digit', day: '2-digit' });
 };
 
 /**
- * 日付文字列 (yyyy/MM/dd) を比較可能な形式 (YYYYMMDD 数値) に変換するヘルパー関数
+ * 日付文字列 (ISO形式または yyyy/MM/dd) を比較可能な数値 (エポックからのミリ秒) に変換するヘルパー関数
  * ソート用に利用
- * @param dateString YYYY/MM/dd 形式の日付文字列
- * @returns 比較可能な数値 (YYYYMMDD)
+ * @param dateTimeString ISO形式または yyyy/MM/dd 形式の日付文字列
+ * @returns 比較可能な数値 (エポックからのミリ秒)
  */
-const dateToComparable = (dateString: string): number => {
-  const parts = dateString.split('/');
-  // YYYYMMDD の数値形式に変換 (例: "2025/06/28" -> 20250628)
-  return parseInt(`${parts[0]}${parts[1]}${parts[2]}`, 10);
+const dateToComparable = (dateTimeString: string): number => {
+  const date = new Date(dateTimeString);
+  // 有効な日付であれば getTime() でミリ秒数を返す。そうでなければ 0 を返す（ソート順に影響しないように）
+  return isNaN(date.getTime()) ? 0 : date.getTime();
 };
 
 /**
@@ -54,12 +52,11 @@ const sortedMemos = computed(() => {
     let valB: string | number; // 型を明確に
 
     if (props.sortKey === 'timestamp' || props.sortKey === 'createdAt') {
-      // 日付の場合は比較可能な数値に変換
+      // 日付の場合は比較可能な数値 (ミリ秒) に変換
       valA = dateToComparable(a[props.sortKey]);
       valB = dateToComparable(b[props.sortKey]);
     } else {
       // ID の場合は文字列として比較 (小文字に変換して大文字小文字を区別しない)
-      // ★修正: a[props.sortKey] は Memo の有効なプロパティであることを TypeScript に伝える
       valA = (a[props.sortKey] as string).toLowerCase();
       valB = (b[props.sortKey] as string).toLowerCase();
     }
@@ -79,7 +76,6 @@ const sortedMemos = computed(() => {
  */
 const handleSortKeyChange = (event: Event) => {
   const newSortKey = (event.target as HTMLSelectElement).value;
-  // ★修正: イベントでemitするsortKeyの型を限定
   emit('update:sortKey', newSortKey as 'id' | 'timestamp' | 'createdAt');
 };
 
@@ -89,7 +85,6 @@ const handleSortKeyChange = (event: Event) => {
  */
 const handleSortOrderChange = (event: Event) => {
   const newSortOrder = (event.target as HTMLSelectElement).value;
-  // ★修正: イベントでemitするsortOrderの型を限定
   emit('update:sortOrder', newSortOrder as 'asc' | 'desc');
 };
 
@@ -147,7 +142,7 @@ const handleIdLinkClick = (event: MouseEvent) => {
                    rel="noopener noreferrer"
                    @click="handleIdLinkClick"
                    class="memo-id-link">
-                  ID: {{ memoItem.id }}
+                  @{{ memoItem.id }}
                 </a>
               </strong>
               <!-- タイムスタンプグループ -->
