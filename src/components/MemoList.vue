@@ -1,8 +1,7 @@
 <script setup lang="ts">
-
 // props の定義: 親コンポーネントから memos 配列を受け取る
 const props = defineProps<{
-  memos: Array<{ id: string; text: string }>;
+  memos: Array<{ id: string; text: string; timestamp: string }>;
 }>();
 
 // 親コンポーネントへのイベント発行を定義
@@ -40,15 +39,16 @@ const handleIdLinkClick = (event: MouseEvent) => {
       <li v-for="memoItem in props.memos" :key="memoItem.id" class="memo-item-wrapper">
         <button @click="editMemo(memoItem.id, memoItem.text)" class="memo-item-button">
           <div class="memo-item-content">
-            <!-- IDの文字列をリンクにする -->
-            <strong>ID:
+            <!-- IDとタイムスタンプをフレックスコンテナでラップ -->
+            <strong class="memo-header">
               <a :href="`https://x.com/${memoItem.id}`"
                  target="_blank"
                  rel="noopener noreferrer"
                  @click="handleIdLinkClick"
                  class="memo-id-link">
-                {{ memoItem.id }}
+                ID: {{ memoItem.id }}
               </a>
+              <span class="memo-timestamp"> ({{ memoItem.timestamp }})</span>
             </strong>
             <p>{{ memoItem.text }}</p>
           </div>
@@ -101,11 +101,18 @@ const handleIdLinkClick = (event: MouseEvent) => {
   box-shadow: 0 4px 8px var(--memo-item-hover-shadow);
 }
 
-.memo-item-content strong {
-  color: var(--memo-item-id-color);
-  display: block;
-  margin-bottom: 5px;
-  font-size: 1.1em;
+.memo-item-content {
+  /* ここは特に変更なし。flexを子要素に適用 */
+}
+
+/* ★追加: IDとタイムスタンプを含む行をフレックスボックスで配置 */
+.memo-header {
+  display: flex;
+  justify-content: space-between; /* IDを左、タイムスタンプを右に配置 */
+  align-items: center; /* 垂直方向中央揃え */
+  margin-bottom: 5px; /* 元の strong の margin-bottom を維持 */
+  font-size: 1.1em; /* 元の strong の font-size を維持 */
+  color: var(--memo-item-id-color); /* 元の strong の color を維持 */
 }
 
 .memo-item-content p {
@@ -116,7 +123,7 @@ const handleIdLinkClick = (event: MouseEvent) => {
 
 /* メモアイテム内のIDリンクのスタイル */
 .memo-id-link {
-  color: var(--link-color);
+  color: var(--link-color); /* IDのリンク色 */
   text-decoration: none;
   transition: color 0.3s ease, text-decoration 0.3s ease;
 }
@@ -126,7 +133,12 @@ const handleIdLinkClick = (event: MouseEvent) => {
   color: var(--link-hover);
 }
 
-/* h2 も scoped に含める */
+/* タイムスタンプのスタイル */
+.memo-timestamp {
+  font-size: 0.8em; /* IDより小さく */
+  color: var(--label-color); /* 目立ちすぎない色 */
+}
+
 h2 {
   color: var(--header-color);
 }
