@@ -11,7 +11,7 @@ const twitterId = ref('');
 const currentMemo = ref('');
 // useMemoStore から必要な関数を取得
 // memos ref も取得することで、useMemoStore 内部の状態を直接リアクティブに利用できる
-const { saveMemo, getMemo, memos } = useMemoStore(); // getAllMemos, importMemos は DataManagement に移動
+const { saveMemo, getMemo, memos, deleteMemo } = useMemoStore(); // deleteMemo をここで取得
 
 /**
  * 現在の Twitter ID に対応するメモを localStorage からロードし、currentMemo に設定する
@@ -23,11 +23,11 @@ const loadMemo = () => {
 
 /**
  * 現在の Twitter ID と currentMemo の内容を localStorage に保存する
- * 保存後、ユーザーへのフィードバックは UI 変更で代替
+ * 保存完了のアラートは表示しない
  */
 const saveCurrentMemo = () => {
   saveMemo(twitterId.value, currentMemo.value);
-  // alert('メモを保存しました！'); // 保存通知のalertを削除
+  // alert('メモを保存しました！'); // 通知を削除
 };
 
 /**
@@ -49,6 +49,23 @@ const handleEditMemo = (id: string, text: string) => {
   twitterId.value = id;
   currentMemo.value = text;
   // alert(`ID: ${id} のメモを編集モードにしました。`); // 編集モード通知のalertを削除
+};
+
+/**
+ * 編集画面からの削除ボタンがクリックされた際の処理
+ * ユーザーに確認を求め、現在のメモを削除する
+ */
+const handleDeleteCurrentMemo = () => {
+  if (!twitterId.value) {
+    alert('削除するIDが指定されていません。');
+    return;
+  }
+  if (confirm(`ID: ${twitterId.value} のメモを削除しますか？`)) {
+    deleteMemo(twitterId.value); // useMemoStore の deleteMemo 関数を呼び出す
+    twitterId.value = ''; // 削除後、入力欄をクリア
+    currentMemo.value = ''; // 削除後、テキストエリアをクリア
+    alert('メモを削除しました。'); // 削除完了通知
+  }
 };
 
 /**
@@ -107,11 +124,10 @@ onMounted(async () => {
 
 <template>
   <div class="app-container">
-    <h1>Twitter プロフィール メモ</h1>
+    <h1>Twitterプロフィール メモ</h1>
     <div>
       <label for="twitter-id">Twitter ID:</label>
       <!-- Twitter ID の入力フィールド -->
-      <!-- input type="url" から type="text" に変更済み -->
       <input type="text" id="twitter-id" v-model="twitterId" @input="loadMemo" placeholder="例: elonmusk">
       <!-- Twitter ID が入力されていればプロフィールへのリンクを表示 -->
       <div v-if="twitterId" class="twitter-profile-link-container">
@@ -131,7 +147,10 @@ onMounted(async () => {
     <div v-if="twitterId">
       <label for="memo">メモ:</label>
       <textarea id="memo" v-model="currentMemo" placeholder="このプロフィールについてのメモ"></textarea>
-      <button @click="saveCurrentMemo" class="save-button">保存</button>
+      <div class="edit-buttons"> <!-- ボタンをまとめるための新しいdiv -->
+        <button @click="saveCurrentMemo" class="save-button">保存</button>
+        <button @click="handleDeleteCurrentMemo" class="delete-button">削除</button> <!-- 削除ボタンを追加 -->
+      </div>
     </div>
     <div v-else>
       Twitter ID を入力するとメモが表示されます。
@@ -188,29 +207,49 @@ textarea:focus {
   border-color: var(--input-focus-border);
 }
 
-/* 保存ボタンのスタイル */
-.save-button {
+/* ボタンの共通スタイル */
+button {
   padding: 0.75em 1.5em;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  margin-right: 10px;
   transition: background-color 0.3s ease, transform 0.1s ease;
   font-weight: bold;
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+.save-button {
   background-color: var(--button-save-bg);
   color: white;
 }
 .save-button:hover {
   background-color: var(--button-save-hover);
 }
-.save-button:active {
-  transform: translateY(1px);
-}
 
+.delete-button { /* HomeView内の削除ボタン */
+  background-color: #dc3545; /* 赤色 */
+  color: white;
+  margin-right: 0; /* 右隣の要素がないのでマージンなし */
+}
+.delete-button:hover {
+  background-color: #c82333; /* ホバー時の色を濃く */
+}
 
 hr {
   margin: 2em 0;
   border: none;
   border-top: 1px solid var(--hr-color);
+}
+
+/* ボタンをまとめる新しいdivのスタイル */
+.edit-buttons {
+  display: flex;
+  justify-content: flex-end; /* 右揃え */
+  margin-bottom: 1em; /* 下の要素との間隔 */
 }
 
 /* Twitterプロフィールリンクのスタイル */
