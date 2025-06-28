@@ -5,8 +5,8 @@ import { ref } from 'vue';
 interface Memo {
   id: string; // Twitter ID をメモのキーとして使用
   text: string; // メモの内容
-  timestamp: string; // メモが最後に保存または更新された日付/時刻 (最終更新日) yyyy/MM/dd 形式
-  createdAt: string; // メモが最初に作成された日付 (作成日) yyyy/MM/dd 形式
+  timestamp: string; // メモが最後に保存または更新された日付/時刻 (最終更新日)
+  createdAt: string; // メモが最初に作成された日付 (作成日)
 }
 
 // localStorage に保存するキー名
@@ -122,6 +122,18 @@ export default function useMemoStore() {
     }
   };
 
+  /**
+   * 指定された Twitter ID のメモをリストから削除する
+   * @param id 削除するメモの Twitter ID
+   */
+  const deleteMemo = (id: string) => {
+    // 指定された ID 以外のメモでフィルタリングし、リストを更新
+    memos.value = memos.value.filter(memo => memo.id !== id);
+    saveMemos(); // 変更を localStorage に保存
+    console.log(`Memo with ID ${id} deleted.`);
+  };
+
+
   // Composable 関数が返すプロパティとメソッド
   return {
     memos, // 全てのメモデータ (リアクティブ)
@@ -129,5 +141,6 @@ export default function useMemoStore() {
     getMemo, // メモ取得関数
     getAllMemos, // 全メモ取得関数 (エクスポート用)
     importMemos,  // メモインポート関数
+    deleteMemo, // メモ削除関数
   };
 }
