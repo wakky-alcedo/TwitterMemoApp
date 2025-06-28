@@ -1,25 +1,23 @@
 <script setup lang="ts">
-// useMemoStore から deleteMemo は不要になったので削除
-// import useMemoStore from '../composables/useMemoStore';
+import { computed } from 'vue';
 
-// props の定義: 親コンポーネントから memos 配列を受け取る
+// Props の定義: 親コンポーネントから memos 配列と並び替え基準を受け取る
 const props = defineProps<{
   memos: Array<{ id: string; text: string; timestamp: string; createdAt: string }>;
+  sortKey: 'id' | 'timestamp' | 'createdAt'; // ★修正: sortKey の型を具体的に指定
+  sortOrder: 'asc' | 'desc'; // ★修正: sortOrder の型を具体的に指定
 }>();
 
-// 親コンポーネントへのイベント発行を定義
-const emit = defineEmits(['edit-memo']);
-
-// useMemoStore から deleteMemo 関数は不要になったので削除
-// const { deleteMemo } = useMemoStore();
+// 親コンポーネントへのイベント発行を定義 (sortKey と sortOrder の更新、edit-memo)
+const emit = defineEmits(['update:sortKey', 'update:sortOrder', 'edit-memo']);
 
 /**
  * 日付文字列 (yyyy/MM/dd) を yy/MM/dd 形式にフォーマットするヘルパー関数
- * @param dateString/MM/dd 形式の日付文字列
+ * @param dateString YYYY/MM/dd 形式の日付文字列
  * @returns yy/MM/dd 形式の短い日付文字列
  */
 const formatShortDate = (dateString: string): string => {
-  // DateオブジェクトはYYYY-MM-DD 形式の文字列を推奨するため、ハイフンに変換
+  // DateオブジェクトはYYYY-MM-DD 形式の文字列を推奨するため、ハイフンに変換してパース
   const dateParts = dateString.split('/');
   if (dateParts.length === 3) {
     const formatted = `${dateParts[0]}-${dateParts[1]}-${dateParts[2]}`;
@@ -30,6 +28,69 @@ const formatShortDate = (dateString: string): string => {
     }
   }
   return dateString; // フォーマットできない場合は元の文字列を返す
+};
+
+/**
+ * 日付文字列 (yyyy/MM/dd) を比較可能な形式 (YYYYMMDD 数値) に変換するヘルパー関数
+ * ソート用に利用
+ * @param dateString YYYY/MM/dd 形式の日付文字列
+ * @returns 比較可能な数値 (YYYYMMDD)
+ */
+const dateToComparable = (dateString: string): number => {
+  const parts = dateString.split('/');
+  // YYYYMMDD の数値形式に変換 (例: "2025/06/28" -> 20250628)
+  return parseInt(`${parts[0]}${parts[1]}${parts[2]}`, 10);
+};
+
+/**
+ * ソートされたメモのリストを返す計算プロパティ
+ */
+const sortedMemos = computed(() => {
+  // 元の配列を破壊しないようにコピーを作成
+  const memosCopy = [...props.memos];
+
+  memosCopy.sort((a, b) => {
+    let valA: string | number; // 型を明確に
+    let valB: string | number; // 型を明確に
+
+    if (props.sortKey === 'timestamp' || props.sortKey === 'createdAt') {
+      // 日付の場合は比較可能な数値に変換
+      valA = dateToComparable(a[props.sortKey]);
+      valB = dateToComparable(b[props.sortKey]);
+    } else {
+      // ID の場合は文字列として比較 (小文字に変換して大文字小文字を区別しない)
+      // ★修正: a[props.sortKey] は Memo の有効なプロパティであることを TypeScript に伝える
+      valA = (a[props.sortKey] as string).toLowerCase();
+      valB = (b[props.sortKey] as string).toLowerCase();
+    }
+
+    // 比較ロジック
+    if (valA < valB) return props.sortOrder === 'asc' ? -1 : 1;
+    if (valA > valB) return props.sortOrder === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  return memosCopy;
+});
+
+/**
+ * 並び替えキーが変更されたときのハンドラ
+ * @param event 変更イベント
+ */
+const handleSortKeyChange = (event: Event) => {
+  const newSortKey = (event.target as HTMLSelectElement).value;
+  // ★修正: イベントでemitするsortKeyの型を限定
+  emit('update:sortKey', newSortKey as 'id' | 'timestamp' | 'createdAt');
+};
+
+/**
+ * 並び替え順序が変更されたときのハンドラ
+ * @param event 変更イベント
+ */
+const handleSortOrderChange = (event: Event) => {
+  const newSortOrder = (event.target as HTMLSelectElement).value;
+  // ★修正: イベントでemitするsortOrderの型を限定
+  emit('update:sortOrder', newSortOrder as 'asc' | 'desc');
 };
 
 /**
@@ -49,28 +110,33 @@ const editMemo = (id: string, text: string) => {
 const handleIdLinkClick = (event: MouseEvent) => {
   event.stopPropagation(); // 親要素（メモボタン）のクリックイベントを発火させない
 };
-
-/**
- * 削除ボタンがクリックされた際の処理 (このコンポーネントからは削除)
- * @param id 削除するメモの Twitter ID
- * @param event クリックイベント
- */
-// const handleDeleteClick = (id: string, event: MouseEvent) => {
-//   event.stopPropagation();
-//   if (confirm(`ID: ${id} のメモを削除しますか？`)) {
-//     deleteMemo(id);
-//     alert('メモを削除しました。');
-//   }
-// };
 </script>
 
 <template>
-  <h2>保存済みメモ一覧</h2>
+  <div class="list-header-container">
+    <h2>メモ一覧</h2>
+    <div class="sort-controls">
+      <label for="sort-key">並び替え基準:</label>
+      <select :value="props.sortKey" @change="handleSortKeyChange" id="sort-key">
+        <option value="timestamp">更新日</option>
+        <option value="createdAt">作成日</option>
+        <option value="id">ID</option>
+      </select>
+
+      <label for="sort-order">順序:</label>
+      <select :value="props.sortOrder" @change="handleSortOrderChange" id="sort-order">
+        <option value="desc">降順</option>
+        <option value="asc">昇順</option>
+      </select>
+    </div>
+  </div>
+
   <div class="memo-list-container">
-    <p v-if="props.memos.length === 0">まだメモは保存されていません。</p>
+    <p v-if="sortedMemos.length === 0">まだメモは保存されていません。</p>
     <ul v-else class="memo-list">
       <!-- 各メモアイテムをボタンとして表示 -->
-      <li v-for="memoItem in props.memos" :key="memoItem.id" class="memo-item-wrapper">
+      <!-- sortedMemos を v-for に使用 -->
+      <li v-for="memoItem in sortedMemos" :key="memoItem.id" class="memo-item-wrapper">
         <button @click="editMemo(memoItem.id, memoItem.text)" class="memo-item-button">
           <div class="memo-item-content">
             <div class="memo-header">
@@ -93,15 +159,6 @@ const handleIdLinkClick = (event: MouseEvent) => {
             </div>
             <p>{{ memoItem.text }}</p>
           </div>
-          <!-- 削除ボタンをコンテンツの右端に配置 (HomeViewに移動) -->
-          <!-- <button @click="handleDeleteClick(memoItem.id, $event)" class="delete-button" title="このメモを削除">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash-2">
-              <polyline points="3 6 5 6 21 6"></polyline>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              <line x1="10" y1="11" x2="10" y2="17"></line>
-              <line x1="14" y1="11" x2="14" y2="17"></line>
-            </svg>
-          </button> -->
         </button>
       </li>
     </ul>
@@ -109,9 +166,40 @@ const handleIdLinkClick = (event: MouseEvent) => {
 </template>
 
 <style scoped>
+h2 {
+  color: var(--header-color);
+}
+
+.sort-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 1em;
+  background-color: var(--memo-list-bg); /* 背景色をリストコンテナに合わせる */
+  border: 1px solid var(--memo-list-border);
+  border-radius: 8px;
+  padding: 5px 10px; /* パディングを少し減らす */
+}
+
+.sort-controls label {
+  margin-bottom: 0;
+  font-size: 0.8em; /* フォントサイズを少し小さく */
+  color: var(--label-color);
+}
+
+.sort-controls select {
+  padding: 0.3em 0.5em; /* パディングを調整 */
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  background-color: var(--input-bg);
+  color: var(--text-color);
+  font-size: 0.8em; /* フォントサイズを少し小さく */
+  cursor: pointer;
+}
+
 /* メモ一覧のスタイル */
 .memo-list-container {
-  margin-top: 1em;
+  margin-top: 0; /* list-header-container にマージンを移動したので0に */
   border: 1px solid var(--memo-list-border);
   border-radius: 8px;
   padding: 15px;
@@ -140,9 +228,9 @@ const handleIdLinkClick = (event: MouseEvent) => {
   padding: 15px;
   border-radius: 8px;
   box-shadow: 0 2px 5px var(--memo-item-shadow);
-  display: flex; /* flex を使用してコンテンツと削除ボタンを横並びにする */
-  justify-content: space-between; /* コンテンツと削除ボタンを両端に配置 */
-  align-items: center; /* 垂直方向中央揃え */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -153,24 +241,24 @@ const handleIdLinkClick = (event: MouseEvent) => {
 }
 
 .memo-item-content {
-  flex-grow: 1; /* コンテンツが利用可能なスペースを占める */
-  min-width: 0; /* flexアイテムの最小幅設定 */
+  flex-grow: 1;
+  min-width: 0;
 }
 
 /* IDとタイムスタンプを含む行をフレックスボックスで配置 */
 .memo-header {
   display: flex;
-  justify-content: space-between; /* IDグループを左、タイムスタンプグループを右に配置 */
-  align-items: flex-start; /* 上揃え (タイムスタンプが2行になる可能性を考慮) */
+  justify-content: space-between;
+  align-items: flex-start;
   margin-bottom: 5px;
 }
 
 .memo-id-group {
-  flex-shrink: 1; /* 縮小を許可 */
-  min-width: 0; /* flexアイテムの最小幅設定 */
-  white-space: nowrap; /* IDが折り返さないように */
-  overflow: hidden; /* はみ出した場合に隠す */
-  text-overflow: ellipsis; /* はみ出した場合に「...」で表示 */
+  flex-shrink: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: var(--memo-item-id-color);
   font-size: 1.1em;
 }
@@ -178,10 +266,10 @@ const handleIdLinkClick = (event: MouseEvent) => {
 
 .memo-timestamps {
   display: flex;
-  flex-direction: column; /* 日付を縦に並べる */
-  align-items: flex-end; /* 右揃え */
-  flex-shrink: 1; /* 縮小を許可 */
-  margin-left: 10px; /* IDグループとの間隔 */
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 1;
+  margin-left: 10px;
 }
 
 .memo-item-content p {
@@ -204,37 +292,12 @@ const handleIdLinkClick = (event: MouseEvent) => {
 
 /* タイムスタンプのスタイル */
 .memo-timestamp, .memo-created-at {
-  font-size: 0.75em; /* IDより小さく */
-  color: var(--label-color); /* 目立ちすぎない色 */
-  white-space: nowrap; /* 折り返さない */
+  font-size: 0.75em;
+  color: var(--label-color);
+  white-space: nowrap;
 }
 
 .memo-created-at {
-  margin-top: 2px; /* 最終更新日との間隔 */
-}
-
-/* 削除ボタンのスタイル (このコンポーネントからは削除) */
-/* .delete-button {
-  background-color: transparent;
-  border: none;
-  color: #dc3545;
-  cursor: pointer;
-  padding: 5px;
-  margin-left: 15px;
-  flex-shrink: 0;
-  transition: color 0.3s ease, transform 0.1s ease;
-}
-
-.delete-button:hover {
-  color: #c82333;
-  transform: scale(1.1);
-}
-
-.delete-button svg {
-  vertical-align: middle;
-} */
-
-h2 {
-  color: var(--header-color);
+  margin-top: 2px;
 }
 </style>
