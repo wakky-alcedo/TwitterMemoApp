@@ -1,5 +1,236 @@
-# Vue 3 + TypeScript + Vite
+# Twitterプロフィール メモ
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+このアプリケーションは、Twitter（現X）のプロフィールURLからIDを抽出し、そのIDごとにメモを保存・表示できるシンプルなPWA（Progressive Web App）です。Flutterへの将来的な移行を見据え、データロジックとUIの分離に重点を置いて設計されたプロトタイプです。
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+## 🚀 ユーザー向け利用ガイド (使い方)
+
+### アプリのインストール方法 (PWAとしてホーム画面に追加)
+
+このアプリはPWAとして提供されているため、ブラウザから簡単にスマートフォンのホーム画面に追加し、ネイティブアプリのように利用できます。
+
+#### Androidの場合 (Chrome推奨)
+
+1.  お使いのAndroidスマートフォンのChromeブラウザで、デプロイされたアプリケーションのURLにアクセスします。
+
+2.  Chromeのアドレスバーの右側にある**三点リーダー（⋮）メニュー**をタップします。
+
+3.  メニューの中から「**アプリをインストール**」または「**ホーム画面に追加**」を探してタップします。
+
+4.  表示されるダイアログで「**追加**」をタップすると、ホーム画面にアプリのアイコンが追加されます。
+
+#### iOSの場合 (Safari推奨)
+
+1.  お使いのiPhone/iPadのSafariブラウザで、デプロイされたアプリケーションのURLにアクセスします。
+
+2.  画面下部（iPhone）または上部（iPad）にある**共有アイコン** (□に↑矢印のマーク) をタップします。
+
+3.  メニューの中から「**ホーム画面に追加**」を探してタップします。
+
+4.  右上の「**追加**」をタップすると、ホーム画面にアプリのアイコンが追加されます。
+
+**💡 iOSの共有機能について:**
+現時点では、iOSのネイティブTwitter（X）アプリからの直接共有シートの候補にPWAが表示されるのは難しい場合があります。この機能が必要な場合は、将来的にFlutterなどのネイティブアプリ技術への移行をご検討ください。
+
+### アプリの基本的な使い方
+
+1.  **Twitter IDの入力とメモの表示/保存:**
+
+      * アプリを開き、上部の「Twitter ID」入力欄にTwitterのユーザーID（例: `elonmusk`）を入力します。
+
+      * 入力すると、そのIDに紐付けられたメモが下部のテキストエリアに自動的に表示されます。
+
+      * メモを編集し、「保存」ボタンを押すと、その内容が保存されます。
+
+2.  **Twitterからの共有での利用:**
+
+      * Twitter（X）アプリで、メモしたいプロフィールのページを開きます。
+
+      * 「共有」アイコンをタップし、「リンクを共有」を選択します。
+
+      * 共有候補の中に「Twitterプロフィール メモ」アプリのアイコンが表示されるはずです。これをタップすると、アプリが起動し、自動的にそのプロフィールのIDが入力欄にセットされます。
+
+3.  **メモの編集と削除:**
+
+      * 下部の「メモ一覧」から編集したいメモの項目をクリックすると、そのIDとメモ内容が上部の入力欄に反映され、編集できるようになります。
+
+      * 編集後、「保存」で更新されます。
+
+      * 「保存」ボタンの右隣にある「削除」ボタンをクリックすると、現在のIDのメモが削除されます。
+
+4.  **メモ一覧の並び替え:**
+
+      * 「メモ一覧」の上部に、「並び替え基準」と「順序」のドロップダウンがあります。
+
+      * 「更新日」「作成日」「ID」を基準に、「昇順」「降順」でメモを並び替えることができます。
+
+      * デフォルトでは「更新日」の「降順」（新しいものが上）で表示されます。
+
+5.  **データのインポート/エクスポート:**
+
+      * **エクスポート:** 「データ管理」セクションの「メモをエクスポート」ボタンをクリックすると、現在保存されている全てのメモがJSONファイルとしてダウンロードされます。
+
+      * **インポート:** 「メモをインポート」ボタンをクリックし、エクスポートしたJSONファイルを選択すると、そのファイルの内容で現在のメモが上書きされます。
+
+### テーマ適応
+
+お使いのスマートフォンのシステムテーマ（ダークモード/ライトモード）に合わせて、アプリの配色が自動的に切り替わります。
+
+## 🧑‍💻 開発者向け仕様書 (Development Guide)
+
+### プロジェクト概要
+
+本プロジェクトは、Twitterプロフィールに紐付くメモを管理するPWAのプロトタイプです。将来的なFlutter（ネイティブアプリ）への移行を強く意識した設計思想で構築されています。
+
+  * **技術スタック:**
+
+      * **フロントエンドフレームワーク:** Vue 3 (Composition API, `<script setup>`)
+
+      * **ビルドツール:** Vite
+
+      * **言語:** TypeScript
+
+      * **PWA:** `vite-plugin-pwa`
+
+      * **状態管理:** Vue Composable (カスタム `useMemoStore`)
+
+      * **データ永続化:** `localStorage` (ブラウザのローカルストレージ)
+
+  * **設計方針:**
+
+      * **Flutter移行への考慮:** データロジック層をComposable関数としてUIから完全に分離。UIコンポーネントは使い捨て可能（Flutterで再実装）な設計としました。
+
+      * **関心の分離:** 各機能（データ管理、メモ一覧表示）を独立したコンポーネントに分割。
+
+      * **疎結合:** UIとロジック、テーマ設定を可能な限り疎結合に保ちます。
+
+### プロジェクト構成
+
+```
+src/
+├─ assets/
+│   └─ styles/
+│       └─ themes.css      # アプリ全体のテーマ（ライト/ダークモード）設定
+├─ composables/
+│   └─ useMemoStore.ts      # データ保存/取得/削除ロジック、localStorageアクセス管理
+├─ components/
+│   ├─ DataManagement.vue  # データのエクスポート/インポートUIとロジック
+│   └─ MemoList.vue        # メモ一覧表示、並び替え、編集モードトリガーUI
+├─ views/
+│   └─ HomeView.vue         # メインのUI (メモ入力、保存、他コンポーネントの統合)
+├─ App.vue                  # アプリケーションのルートコンポーネント
+├─ main.ts                  # Vueアプリケーションのエントリーポイント、グローバルCSSインポート
+├─ registerServiceWorker.ts # PWA Service Worker登録
+└─ vite-env.d.ts            # Viteの型定義
+index.html                  # アプリケーションのHTMLエントリポイント、PWAマニフェスト/ファビコンリンク
+package.json                # プロジェクトの依存関係とスクリプト
+tsconfig.json               # TypeScript設定
+vite.config.ts              # Viteおよびvite-plugin-pwaの設定
+```
+
+### 主要機能の実装詳細
+
+#### PWA対応
+
+  * **`vite-plugin-pwa`:** Viteプラグインとして導入され、Service Workerの生成とWeb App Manifestの管理を自動化しています。
+
+  * **`manifest.webmanifest`:** `vite.config.ts` で設定を定義し、アプリ名、アイコン、テーマカラー、そして\*\*`share_target`\*\*（他のアプリからの共有を受け取るための設定）を記述しています。
+
+  * **アイコンの配置:** PWAアイコンとファビコンは `public` ディレクトリに配置されています。
+
+  * **`index.html`:** アプリケーションのタイトル (`<title>`) とファビコン (`<link rel="icon">`) を設定しています。PWAマニフェストへのリンクもここにあります。
+
+#### Twitterプロフィール連携
+
+  * **Web Share Target API:** `manifest.webmanifest` の `share_target` を利用し、Twitter（X）アプリなどからの共有データを受け取ります。
+
+  * **ID抽出ロジック:** `HomeView.vue` の `onMounted` フック内で、共有されたURLが `text` パラメータとして渡されることを検知し、正規表現 (`/(?:twitter|x)\.com\/(?:#!\/)?([a-zA-Z0-9_]+)/`) を使ってプロフィールURLからTwitter IDを抽出します。
+
+#### メモデータ管理
+
+  * **`useMemoStore.ts`:**
+
+      * `localStorage` への直接的なアクセスをこのComposable関数内にカプセル化しています。
+
+      * `Memo` インターフェースは `id`, `text`, `timestamp` (最終更新日), `createdAt` (作成日) を持ちます。
+
+      * 日付は内部で**ISO 8601形式の文字列** (例: `2025-06-28T10:30:00.000Z`) で保存され、時間情報を含んだ正確なソートが可能です。
+
+      * `loadMemos` と `importMemos` には、古いデータ形式（`createdAt` やISO形式でない日付）との互換性確保のためのフォールバックロジックが含まれています。
+
+#### 並び替え機能
+
+  * **`HomeView.vue`:** `sortKey` (`'id'`, `'timestamp'`, `'createdAt'`) と `sortOrder` (`'asc'`, `'desc'`) というリアクティブな状態を管理し、`MemoList.vue` に `props` として渡します。
+
+  * **`MemoList.vue`:**
+
+      * `props` で `sortKey` と `sortOrder` を受け取り、ユーザーが選択するためのUI（`<select>`要素）を提供します。
+
+      * `computed` プロパティ `sortedMemos` を使用して、現在の並び替え基準に基づいてメモのリストを動的にソートして表示します。
+
+      * 日付のソートには、`Date.getTime()` を利用したISO形式文字列の比較が、より正確な時間単位でのソートを可能にしています。
+
+      * 表示時には `formatShortDate` ヘルパー関数で `yy/MM/dd` 形式に整形されます。
+
+#### テーマ適応
+
+  * **`src/assets/styles/themes.css`:**
+
+      * CSS変数 (`--bg-color`, `--text-color` など) を `:root` セレクタで定義しています。
+
+      * `@media (prefers-color-scheme: dark)` メディアクエリ内で、ユーザーのシステム設定がダークモードの場合のCSS変数の値を上書きしています。
+
+      * `html` と `body` 要素にこれらのCSS変数を適用することで、アプリケーション全体がOSのテーマに合わせて自動的に配色を変更します。
+
+#### UI/UX改善点
+
+  * **アラートの削減:** 保存完了や編集モードへの切り替え時の `alert` は削除され、よりスムーズな操作感を提供します。
+
+  * **編集/削除機能:** メモ一覧の項目クリックで編集モードになり、編集画面で明示的に削除ボタンをクリックする方式に改善しました。
+
+  * **IDからの直接リンク:** メモ一覧のIDをクリックすると、そのTwitter（X）プロフィールページへ直接遷移するリンクが追加されています。
+
+### 開発環境のセットアップ
+
+1.  **リポジトリのクローン:**
+
+    ```bash
+    git clone [あなたのGitHubリポジトリURL]
+    cd [あなたのリポジトリ名]
+    ```
+
+2.  **依存関係のインストール:**
+
+    ```bash
+    npm install
+    ```
+
+3.  **開発サーバーの起動:**
+
+    ```bash
+    npm run dev
+    ```
+
+    ブラウザで `http://localhost:5173` (または表示されたURL) にアクセスして確認できます。
+
+4.  **本番ビルドの作成:**
+
+    ````bash
+    npm run build
+    ```dist` ディレクトリに本番用ファイルが生成されます。
+
+    ````
+
+5.  **デプロイ:**
+    Vercelのような静的サイトホスティングサービスに `dist` ディレクトリの内容をデプロイしてください。VercelとGitHubを連携させておくと、`git push` で自動デプロイが可能です。
+
+### Flutter移行への考慮事項
+
+  * **Composable関数の再利用:** `src/composables/useMemoStore.ts` に実装されたデータロジックは、FlutterでDartのクラスとして比較的容易に再実装できる構造になっています。LocalStorageの操作部分はFlutterの`shared_preferences`や`hive`といった永続化ライブラリに置き換えられます。
+
+  * **UIの使い捨て可能性:** Vueコンポーネント (`HomeView.vue`, `DataManagement.vue`, `MemoList.vue`) はVueの強力なエコシステムを利用しているため、これらはFlutterでのUI実装時には基本的にすべてWidgetとしてゼロから再構築することになります。ただし、UIロジック（例: ソート、日付フォーマット）の一部はDartで再利用可能です。
+
+  * **データ移行戦略:** Web版のLocalStorageに保存されたデータをFlutter版アプリに移行する際は、JSONエクスポート/インポート機能が有効な移行手段となります。
+
+  * **iOSの共有機能の統合:** 現在のWeb Share Target APIでは限界があるiOSのネイティブ共有機能への統合は、Flutterでは`share`パッケージや`url_launcher`、あるいはより深いApp Groupを使った実装で実現できる可能性が高いです。
+
+このREADMEが、ユーザーと将来の開発者双方にとって有用であることを願っています。
