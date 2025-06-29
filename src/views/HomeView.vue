@@ -12,7 +12,10 @@ const currentMemo = ref('');
 // 現在表示・編集中のメモのタグ
 const currentTags = ref<string[]>([]);
 // useMemoStore から必要な関数を取得
-const { saveMemo, getMemo, memos, deleteMemo, getMemosByTag } = useMemoStore();
+const { saveMemo, getMemo, memos, deleteMemo, getMemosByTag, getAllUniqueTags } = useMemoStore();
+
+// 全てのユニークなタグを保持するリアクティブ変数
+const allUniqueTags = ref<string[]>([]);
 
 // 現在選択されているタグ (フィルタリング用)
 const selectedTag = ref<string | null>(null);
@@ -55,6 +58,7 @@ const loadMemo = () => {
   const memo = getMemo(twitterId.value);
   currentMemo.value = memo?.text || '';
   currentTags.value = memo?.tags || [];
+  allUniqueTags.value = getAllUniqueTags();
 };
 
 /**
@@ -90,6 +94,10 @@ const handleEditMemo = (id: string, text: string, tags: string[]) => {
  * 編集画面からの削除ボタンがクリックされた際の処理
  * ユーザーに確認を求め、現在のメモを削除する
  */
+/**
+ * 編集画面からの削除ボタンがクリックされた際の処理
+ * ユーザーに確認を求め、現在のメモを削除する
+ */
 const handleDeleteCurrentMemo = () => {
   if (!twitterId.value) {
     alert('削除するIDが指定されていません。');
@@ -99,6 +107,12 @@ const handleDeleteCurrentMemo = () => {
     deleteMemo(twitterId.value); // useMemoStore の deleteMemo 関数を呼び出す
     twitterId.value = ''; // 削除後、入力欄をクリア
     currentMemo.value = ''; // 削除後、テキストエリアをクリア
+  }
+};
+
+const addTagToCurrent = (tag: string) => {
+  if (!currentTags.value.includes(tag)) {
+    currentTags.value.push(tag);
   }
 };
 
@@ -140,6 +154,7 @@ onMounted(async () => {
   } else {
     console.log('No shared text found.');
   }
+  allUniqueTags.value = getAllUniqueTags();
 });
 </script>
 
@@ -166,6 +181,11 @@ onMounted(async () => {
       <textarea id="memo" v-model="currentMemo" placeholder="このプロフィールについてのメモ"></textarea>
       <label for="tags">タグ (カンマ区切り):</label>
       <input type="text" id="tags" :value="currentTags.join(', ')" @input="event => currentTags = (event.target as HTMLInputElement).value.split(',').map(tag => tag.trim()).filter(tag => tag)" placeholder="例: Vue.js, Web開発">
+      <div class="existing-tags">
+        <span v-for="tag in allUniqueTags" :key="tag" class="existing-tag-item" @click="addTagToCurrent(tag)">
+          #{{ tag }}
+        </span>
+      </div>
       <div class="edit-buttons">
         <button @click="saveCurrentMemo" class="save-button">保存</button>
         <button @click="handleDeleteCurrentMemo" class="delete-button">削除</button>
@@ -337,5 +357,27 @@ hr {
 
 .clear-filter-button:hover {
   background-color: var(--button-clear-filter-hover);
+}
+
+.existing-tags {
+  margin-top: 0.5em;
+  margin-bottom: 1em;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.existing-tag-item {
+  background-color: var(--tag-bg);
+  color: var(--tag-text);
+  padding: 5px 10px;
+  border-radius: 15px;
+  cursor: pointer;
+  font-size: 0.85em;
+  transition: background-color 0.2s ease;
+}
+
+.existing-tag-item:hover {
+  background-color: var(--tag-hover-bg);
 }
 </style>

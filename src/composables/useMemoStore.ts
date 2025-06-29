@@ -184,5 +184,20 @@ export default function useMemoStore() {
     importMemos,  // メモインポート関数
     deleteMemo, // メモ削除関数
     getMemosByTag, // タグでメモを検索する関数
+    getAllUniqueTags, // 全てのユニークなタグを取得する関数
   };
+}
+
+/**
+ * 全てのメモからユニークなタグのリストを抽出するヘルパー関数
+ * @returns ユニークなタグの文字列配列
+ */
+function getAllUniqueTags(): string[] {
+  const uniqueTags = new Set<string>();
+  memos.value.forEach(memo => {
+    memo.tags.forEach(tag => {
+      uniqueTags.add(tag);
+    });
+  });
+  return Array.from(uniqueTags);
 }
