@@ -65,7 +65,6 @@ const handleDeleteCurrentMemo = () => {
     deleteMemo(twitterId.value); // useMemoStore の deleteMemo 関数を呼び出す
     twitterId.value = ''; // 削除後、入力欄をクリア
     currentMemo.value = ''; // 削除後、テキストエリアをクリア
-    alert('メモを削除しました。'); // 削除完了通知
   }
 };
 
