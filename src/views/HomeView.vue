@@ -116,6 +116,21 @@ const addTagToCurrent = (tag: string) => {
   }
 };
 
+const handleTagsInput = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  let value = target.value;
+  // 最後のカンマを削除し、トリムして配列に変換
+  let tags = value.split(',').map(tag => tag.trim()).filter(tag => tag);
+
+  // 重複を排除
+  currentTags.value = Array.from(new Set(tags));
+
+  // フォーカスが外れたときに、入力が空でなく、かつ最後の文字がカンマでない場合にカンマを追加
+  if (value.length > 0 && !value.endsWith(',')) {
+    target.value = value + ',';
+  }
+};
+
 /**
  * Twitter ID に基づいて Twitter プロフィールURLを生成する計算プロパティ
  */
@@ -180,7 +195,7 @@ onMounted(async () => {
       <label for="memo">メモ:</label>
       <textarea id="memo" v-model="currentMemo" placeholder="このプロフィールについてのメモ"></textarea>
       <label for="tags">タグ (カンマ区切り):</label>
-      <input type="text" id="tags" :value="currentTags.join(', ')" @input="event => currentTags = (event.target as HTMLInputElement).value.split(',').map(tag => tag.trim()).filter(tag => tag)" placeholder="例: Vue.js, Web開発">
+      <input type="text" id="tags" :value="currentTags.join(', ') + (currentTags.length > 0 ? ', ' : '')" @blur="handleTagsInput" placeholder="例: Vue.js, Web開発">
       <div class="existing-tags">
         <span v-for="tag in allUniqueTags" :key="tag" class="existing-tag-item" @click="addTagToCurrent(tag)">
           #{{ tag }}
