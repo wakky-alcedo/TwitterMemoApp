@@ -35,6 +35,20 @@
   --memo-item-hover-shadow: rgba(0,0,0,0.15);
   --memo-item-id-color: #007bff; /* メモアイテムのID色 */
   --memo-item-text-color: #555; /* メモアイテムのテキスト色 */
+
+  /* タグのスタイル */
+  --tag-bg: #e0e0e0;
+  --tag-text: #333;
+  --tag-hover-bg: #d0d0d0;
+
+  /* フィルタ情報とボタンのスタイル */
+  --filter-info-bg: #f0f8ff;
+  --filter-info-border: #b0e0e6;
+  --filter-info-text: #2f4f4f;
+  --button-clear-filter-bg: #ff6347;
+  --button-clear-filter-text: #ffffff;
+  --button-clear-filter-hover: #e5533d;
+}
 }
 
 /* ダークテーマのスタイル - prefers-color-scheme が dark の場合に適用 */
@@ -72,6 +86,19 @@
     --memo-item-hover-shadow: rgba(0,0,0,0.3);
     --memo-item-id-color: #63b3ed;
     --memo-item-text-color: #cbd5e0;
+
+    /* タグのスタイル (ダークテーマ用) */
+    --tag-bg: #4a5568;
+    --tag-text: #e2e8f0;
+    --tag-hover-bg: #636b7f;
+
+    /* フィルタ情報とボタンのスタイル (ダークテーマ用) */
+    --filter-info-bg: #2d3748;
+    --filter-info-border: #4a5568;
+    --filter-info-text: #a0aec0;
+    --button-clear-filter-bg: #e53e3e;
+    --button-clear-filter-text: #ffffff;
+    --button-clear-filter-hover: #c53030;
   }
 }
 

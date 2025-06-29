@@ -9,8 +9,39 @@ import MemoList from '../components/MemoList.vue';
 const twitterId = ref('');
 // 現在表示・編集中のメモの内容
 const currentMemo = ref('');
+// 現在表示・編集中のメモのタグ
+const currentTags = ref<string[]>([]);
 // useMemoStore から必要な関数を取得
-const { saveMemo, getMemo, memos, deleteMemo } = useMemoStore();
+const { saveMemo, getMemo, memos, deleteMemo, getMemosByTag } = useMemoStore();
+
+// 現在選択されているタグ (フィルタリング用)
+const selectedTag = ref<string | null>(null);
+
+/**
+ * タグでフィルタリングされたメモのリストを返す計算プロパティ
+ */
+const filteredMemos = computed(() => {
+  if (selectedTag.value) {
+    return getMemosByTag(selectedTag.value);
+  } else {
+    return memos.value;
+  }
+});
+
+/**
+ * MemoList コンポーネントからの filter-by-tag イベントハンドラ
+ * @param tag フィルタリングするタグ
+ */
+const handleFilterByTag = (tag: string) => {
+  selectedTag.value = tag;
+};
+
+/**
+ * フィルタリングを解除する
+ */
+const clearFilter = () => {
+  selectedTag.value = null;
+};
 
 // ★修正: 並び替えの基準となるリアクティブ変数に型アノテーションを追加
 const sortKey = ref<'id' | 'timestamp' | 'createdAt'>('timestamp'); // デフォルトは最終更新日
@@ -21,7 +52,9 @@ const sortOrder = ref<'asc' | 'desc'>('desc'); // デフォルトは降順 (新�
  * twitterId.value は常に現在の Twitter ID を保持していることを前提とする
  */
 const loadMemo = () => {
-  currentMemo.value = getMemo(twitterId.value);
+  const memo = getMemo(twitterId.value);
+  currentMemo.value = memo?.text || '';
+  currentTags.value = memo?.tags || [];
 };
 
 /**
@@ -29,7 +62,7 @@ const loadMemo = () => {
  * 保存完了のアラートは表示しない
  */
 const saveCurrentMemo = () => {
-  saveMemo(twitterId.value, currentMemo.value);
+  saveMemo(twitterId.value, currentMemo.value, currentTags.value);
 };
 
 /**
@@ -47,9 +80,10 @@ const handleImportSuccess = () => {
  * @param id 編集対象のTwitter ID
  * @param text 編集対象のメモ内容
  */
-const handleEditMemo = (id: string, text: string) => {
+const handleEditMemo = (id: string, text: string, tags: string[]) => {
   twitterId.value = id;
   currentMemo.value = text;
+  currentTags.value = tags;
 };
 
 /**
@@ -130,6 +164,8 @@ onMounted(async () => {
     <div v-if="twitterId">
       <label for="memo">メモ:</label>
       <textarea id="memo" v-model="currentMemo" placeholder="このプロフィールについてのメモ"></textarea>
+      <label for="tags">タグ (カンマ区切り):</label>
+      <input type="text" id="tags" :value="currentTags.join(', ')" @input="event => currentTags = (event.target as HTMLInputElement).value.split(',').map(tag => tag.trim()).filter(tag => tag)" placeholder="例: Vue.js, Web開発">
       <div class="edit-buttons">
         <button @click="saveCurrentMemo" class="save-button">保存</button>
         <button @click="handleDeleteCurrentMemo" class="delete-button">削除</button>
@@ -142,13 +178,18 @@ onMounted(async () => {
     <hr>
 
     <!-- MemoList コンポーネントに memos を props として渡し、イベントをハンドリング -->
+    <div v-if="selectedTag" class="filter-info">
+      <span>タグ: #{{ selectedTag }} でフィルタリング中</span>
+      <button @click="clearFilter" class="clear-filter-button">フィルタ解除</button>
+    </div>
     <MemoList
-      :memos="memos"
+      :memos="filteredMemos"
       :sort-key="sortKey"
       :sort-order="sortOrder"
       @update:sort-key="sortKey = $event"
       @update:sort-order="sortOrder = $event"
       @edit-memo="handleEditMemo"
+      @filter-by-tag="handleFilterByTag"
     />
 
     <hr>
@@ -270,5 +311,31 @@ hr {
   height: 14px;
   color: var(--link-color);
   transition: color 0.3s ease;
+}
+
+.filter-info {
+  margin-top: 1em;
+  margin-bottom: 1em;
+  padding: 10px 15px;
+  background-color: var(--filter-info-bg);
+  border: 1px solid var(--filter-info-border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.9em;
+  color: var(--filter-info-text);
+}
+
+.clear-filter-button {
+  background-color: var(--button-clear-filter-bg);
+  color: var(--button-clear-filter-text);
+  padding: 5px 10px;
+  font-size: 0.8em;
+  margin-right: 0; /* 右側のマージンをリセット */
+}
+
+.clear-filter-button:hover {
+  background-color: var(--button-clear-filter-hover);
 }
 </style>

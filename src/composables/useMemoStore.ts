@@ -7,6 +7,7 @@ interface Memo {
   text: string; // メモの内容
   timestamp: string; // メモが最後に保存または更新された日付/時刻 (最終更新日) - ISO 8601 形式
   createdAt: string; // メモが最初に作成された日付 (作成日) - ISO 8601 形式
+  tags: string[]; // メモに関連付けられたタグの配列
 }
 
 const MEMO_KEY = 'twitter-memo-app-memos';
@@ -27,9 +28,13 @@ function loadMemos(): Memo[] {
     if (!memo.createdAt) {
       memo.createdAt = memo.timestamp;
     }
+    // tags がない場合は空の配列をデフォルト値とする
+    if (!memo.tags) {
+      memo.tags = [];
+    }
     // timestamp や createdAt が古い yy/MM/dd 形式の場合、ISO形式に変換する（初回ロード時のみ）
     // ただし、この変換は厳密な日付の復元を保証しないため、新規保存/更新時にのみISO形式を強制する
-    // 例: "24/06/28" を "2024-06-28T00:00:00.000Z" のように
+    // 例: "24/06/28" を "2024-06-28T00:00:00.000Z"
     if (memo.timestamp && !memo.timestamp.includes('T')) {
         const parts = memo.timestamp.split('/');
         // 年が2桁の場合、2000年代と仮定して4桁に変換
@@ -67,7 +72,7 @@ export default function useMemoStore() {
    * @param id Twitter ID
    * @param text メモの内容
    */
-  const saveMemo = (id: string, text: string) => {
+  const saveMemo = (id: string, text: string, tags: string[] = []) => {
     const currentIsoDateTime = getIsoDateTime(); // 現在の日時をISO形式で取得
 
     const existingMemoIndex = memos.value.findIndex((memo) => memo.id === id); // ID で検索
@@ -75,10 +80,11 @@ export default function useMemoStore() {
       // 既存のメモがあれば内容と timestamp (最終更新日) を更新
       memos.value[existingMemoIndex].text = text;
       memos.value[existingMemoIndex].timestamp = currentIsoDateTime; // 最終更新日をISO形式で更新
+      memos.value[existingMemoIndex].tags = tags; // タグを更新
       // createdAt は既存のものを保持し、更新しない
     } else {
-      // なければ新しいメモとして ID、内容、最終更新日、作成日を追加
-      memos.value.push({ id, text, timestamp: currentIsoDateTime, createdAt: currentIsoDateTime }); // 作成日もISO形式で設定
+      // なければ新しいメモとして ID、内容、最終更新日、作成日、タグを追加
+      memos.value.push({ id, text, timestamp: currentIsoDateTime, createdAt: currentIsoDateTime, tags }); // 作成日もISO形式で設定
     }
     saveMemos(); // 変更を localStorage に保存
   };
@@ -88,8 +94,8 @@ export default function useMemoStore() {
    * @param id Twitter ID
    * @returns メモの内容、または空文字列
    */
-  const getMemo = (id: string): string => {
-    return memos.value.find((memo) => memo.id === id)?.text || '';
+  const getMemo = (id: string): Memo | undefined => {
+    return memos.value.find((memo) => memo.id === id);
   };
 
   /**
@@ -120,6 +126,10 @@ export default function useMemoStore() {
           // createdAt が存在しない場合、timestamp を代用する
           if (!memo.createdAt) {
               memo.createdAt = memo.timestamp;
+          }
+          // tags が存在しない場合、空の配列を代用する
+          if (!memo.tags) {
+              memo.tags = [];
           }
           // timestamp/createdAt がISO形式でない場合、ISO形式に変換を試みる（インポート時の互換性のため）
           if (memo.timestamp && !memo.timestamp.includes('T')) {
@@ -156,6 +166,15 @@ export default function useMemoStore() {
     console.log(`Memo with ID ${id} deleted.`);
   };
 
+  /**
+   * 指定されたタグを含むメモを全て取得する
+   * @param tag 検索するタグ
+   * @returns 指定されたタグを含むメモの配列
+   */
+  const getMemosByTag = (tag: string): Memo[] => {
+    return memos.value.filter(memo => memo.tags && memo.tags.includes(tag));
+  };
+
   // Composable 関数が返すプロパティとメソッド
   return {
     memos, // 全てのメモデータ (リアクティブ)
@@ -164,5 +183,6 @@ export default function useMemoStore() {
     getAllMemos, // 全メモ取得関数 (エクスポート用)
     importMemos,  // メモインポート関数
     deleteMemo, // メモ削除関数
+    getMemosByTag, // タグでメモを検索する関数
   };
 }

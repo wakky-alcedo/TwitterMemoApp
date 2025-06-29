@@ -3,13 +3,21 @@ import { computed } from 'vue';
 
 // Props の定義: 親コンポーネントから memos 配列と並び替え基準を受け取る
 const props = defineProps<{
-  memos: Array<{ id: string; text: string; timestamp: string; createdAt: string }>;
+  memos: Array<{ id: string; text: string; timestamp: string; createdAt: string; tags: string[]; }>;
   sortKey: 'id' | 'timestamp' | 'createdAt'; // 並び替えのキー (例: 'id', 'timestamp', 'createdAt')
   sortOrder: 'asc' | 'desc'; // 並び替えの順序 (例: 'asc', 'desc')
 }>();
 
 // 親コンポーネントへのイベント発行を定義 (sortKey と sortOrder の更新、edit-memo)
-const emit = defineEmits(['update:sortKey', 'update:sortOrder', 'edit-memo']);
+const emit = defineEmits(['update:sortKey', 'update:sortOrder', 'edit-memo', 'filter-by-tag']);
+
+/**
+ * タグがクリックされたときに、そのタグでメモをフィルタリングするイベントを親コンポーネントに通知する
+ * @param tag クリックされたタグ
+ */
+const filterByTag = (tag: string) => {
+  emit('filter-by-tag', tag);
+};
 
 /**
  * 日付文字列 (ISO形式または yyyy/MM/dd) を yy/MM/dd 形式にフォーマットするヘルパー関数
@@ -93,8 +101,8 @@ const handleSortOrderChange = (event: Event) => {
  * @param id メモのTwitter ID
  * @param text メモの内容
  */
-const editMemo = (id: string, text: string) => {
-  emit('edit-memo', id, text); // edit-memo イベントを発行
+const editMemo = (id: string, text: string, tags: string[]) => {
+  emit('edit-memo', id, text, tags); // edit-memo イベントを発行
 };
 
 /**
@@ -132,7 +140,7 @@ const handleIdLinkClick = (event: MouseEvent) => {
       <!-- 各メモアイテムをボタンとして表示 -->
       <!-- sortedMemos を v-for に使用 -->
       <li v-for="memoItem in sortedMemos" :key="memoItem.id" class="memo-item-wrapper">
-        <button @click="editMemo(memoItem.id, memoItem.text)" class="memo-item-button">
+        <button @click="editMemo(memoItem.id, memoItem.text, memoItem.tags)" class="memo-item-button">
           <div class="memo-item-content">
             <div class="memo-header">
               <!-- IDの文字列をリンクにする -->
@@ -153,6 +161,9 @@ const handleIdLinkClick = (event: MouseEvent) => {
               </div>
             </div>
             <p>{{ memoItem.text }}</p>
+            <div class="memo-tags">
+              <span v-for="tag in memoItem.tags" :key="tag" class="memo-tag" @click.stop="filterByTag(tag)">#{{ tag }}</span>
+            </div>
           </div>
         </button>
       </li>
@@ -294,5 +305,26 @@ h2 {
 
 .memo-created-at {
   margin-top: 2px;
+}
+
+.memo-tags {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.memo-tag {
+  background-color: var(--tag-bg);
+  color: var(--tag-text);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.75em;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.memo-tag:hover {
+  background-color: var(--tag-hover-bg);
 }
 </style>
