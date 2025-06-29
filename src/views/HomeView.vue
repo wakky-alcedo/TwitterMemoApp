@@ -142,10 +142,6 @@ onMounted(async () => {
 
     <hr>
 
-    <DataManagement @import-success="handleImportSuccess" />
-
-    <hr>
-
     <!-- MemoList コンポーネントに memos を props として渡し、イベントをハンドリング -->
     <MemoList
       :memos="memos"
@@ -155,6 +151,10 @@ onMounted(async () => {
       @update:sort-order="sortOrder = $event"
       @edit-memo="handleEditMemo"
     />
+
+    <hr>
+
+    <DataManagement @import-success="handleImportSuccess" />
   </div>
 </template>
 
